@@ -13,3 +13,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+.btn {
+  @apply bg-gray-100 w-full p-2 text-center border rounded cursor-pointer disabled:bg-red-500
+}
+
+.btn.disabled {
+  @apply bg-gray-200 opacity-50
+}
