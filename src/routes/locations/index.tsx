@@ -3,6 +3,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LucideMenu } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
+import { ReactSortable } from 'react-sortablejs'
+import PageLoader from '@/components/PageLoader'
 
 const depthColors = [
   'bg-blue-400 text-blue-900', // Level 1
@@ -119,7 +121,7 @@ const buildTree = (data, parentId = '') => {
 }
 
 // MAIN APP
-export const Route = createFileRoute('/locations')({
+export const Route = createFileRoute('/locations/')({
   component: RouteComponent,
 })
 
@@ -132,10 +134,24 @@ function RouteComponent() {
   } | null>(null)
 
   // React Query - for fetching data via api
-  const { data, isLoading, error, dataUpdatedAt } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+    dataUpdatedAt,
+  } = useQuery({
     queryKey: ['locations'],
     queryFn: fetchLocations,
   })
+
+  const [list, setList] = useState(() => buildTree(data))
+
+  useEffect(() => {
+    setList(() => {
+      console.log(buildTree(data))
+      return buildTree(data)
+    })
+  }, [dataUpdatedAt])
 
   // React Query - for mutating/updating data via api
   const { mutateAsync: createLocation } = useMutation({
@@ -149,7 +165,6 @@ function RouteComponent() {
   })
 
   // Helpers - structuring data to be json-tree shape
-  const treeData = useMemo(() => buildTree(data || []), [dataUpdatedAt])
 
   // Functions
   const closeModal = () => setActiveModal(null)
@@ -157,7 +172,7 @@ function RouteComponent() {
   const addLocation = async (e) => {
     e.preventDefault()
     const form = e.target
-    const btn = form.querySelector('button[type="submit"]')
+    const btn = form.querySelector("button[type='submit']")
     btn.disabled = true
 
     try {
@@ -180,7 +195,7 @@ function RouteComponent() {
   const editLocation = async (e) => {
     e.preventDefault()
     const form = e.target
-    const btn = form.querySelector('button[type="submit"]')
+    const btn = form.querySelector("button[type='submit']")
     btn.disabled = true
 
     try {
@@ -201,9 +216,8 @@ function RouteComponent() {
       btn.disabled = false
     }
   }
-
   // UI/UX
-  if (isLoading) return <p>Loading...</p>
+  if (isLoading) return <PageLoader />
   if (error) return <p>Error: {error.message}</p>
   return (
     <>
@@ -267,15 +281,22 @@ function RouteComponent() {
         </button>
 
         <button className="text-blue-500 mt-6 mb-2">Expand all</button>
-        <ul className="space-y-3 ">
-          {treeData.map((node) => (
+
+        <ReactSortable
+          className="space-y-3"
+          list={list}
+          setList={setList}
+          animation={200}
+          tag="ul"
+        >
+          {list.map((node) => (
             <TreeNode
               key={node.id}
               node={node}
               setActiveModal={setActiveModal}
             />
           ))}
-        </ul>
+        </ReactSortable>
       </div>
     </>
   )
@@ -285,7 +306,10 @@ function RouteComponent() {
 const TreeNode = ({ node, depth = 0, setActiveModal }) => {
   const [expanded, setExpanded] = useState(false)
   const [optionExpanded, setOptionExpanded] = useState(false)
-
+  const [list, setList] = useState(node.children)
+  useEffect(() => {
+    setList(node.children)
+  }, [node])
   return (
     <li
       className={`space-y-0.5 cursor-pointer`}
@@ -309,7 +333,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
         <div className="ms-auto relative">
           <LucideMenu
             size={32}
-            className="bg-white p-0.5 rounded border cursor-pointer text-black shadow"
+            className=" p-1.5 ursor-pointer text-black"
             onClick={(e) => {
               e.stopPropagation()
               setOptionExpanded(!optionExpanded)
@@ -318,8 +342,20 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
           {optionExpanded && (
             <div className="absolute border bg-white shadow p-1 rounded right-full top-0">
               <div className="flex flex-col divide-y divide-gray-400">
+                <Link
+                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setOptionExpanded(false)
+                  }}
+                  to="/locations/$locationId/items"
+                  params={{ locationId: node.id }}
+                >
+                  View Items
+                </Link>
+
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap"
+                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -329,7 +365,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Image
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap"
+                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -339,7 +375,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Barcode
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap"
+                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -349,7 +385,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Edit
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap"
+                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -365,8 +401,14 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
       </div>
 
       {expanded && node.children?.length > 0 && (
-        <ul className={`ms-3 space-y-1`}>
-          {node.children.map((child) => (
+        <ReactSortable
+          className="ms-3 space-y-1"
+          list={list}
+          setList={setList}
+          animation={200}
+          tag="ul"
+        >
+          {list.map((child) => (
             <TreeNode
               key={child.id}
               node={child}
@@ -374,7 +416,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
               setActiveModal={setActiveModal}
             />
           ))}
-        </ul>
+        </ReactSortable>
       )}
     </li>
   )

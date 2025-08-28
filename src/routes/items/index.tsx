@@ -11,6 +11,8 @@ import {
   fetchItems,
   fetchSuppliers,
 } from '@/api/api'
+import BasicLoader from '@/components/BasicLoader'
+import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
 
 // MAIN APP
 export const Route = createFileRoute('/items/')({
@@ -152,23 +154,7 @@ function RouteComponent() {
           <button className="action-link">Bulk Update UPC</button>
         </div>
 
-        <div className="flex items-center gap-1 mb-3">
-          <input
-            type="text"
-            className="form-control flex-1"
-            placeholder="Search"
-          />
-          <div className="">
-            <LucideListFilter
-              size={42}
-              className="bg-white p-0.5 rounded border cursor-pointer text-black shadow"
-              onClick={(e) => {
-                e.stopPropagation()
-                setOptionExpanded(!optionExpanded)
-              }}
-            />
-          </div>
-        </div>
+        <ProductSearchBarWithFilters />
 
         <div className="grid grid-cols-2 gap-3 ">
           {data?.map((item) => (
@@ -195,25 +181,27 @@ const ItemCard = ({ data, setActiveModal }) => {
 
       {/* Vendor / Store */}
       <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
-        {data?.vendor}
+        {data?.vendor || "undefined"}
       </div>
 
       {/* Product Name */}
       <div className="text-lg leading-5 line-clamp-2 mb-3 flex-grow-1 flex-shrink-0">
-        {data?.name}
+        {data?.name || "undefined"}
       </div>
 
       {/* SKU / ID */}
       <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-        {data?.sku}
+        {data?.sku || 'SKU-MISSING'}
       </div>
 
       {/* Secondary ID */}
-      <div className="text-xs text-gray-400 truncate">{data?.internal_sku}</div>
+      <div className="text-xs text-gray-400 truncate">
+        {data?.internal_sku || 'DTH-MISSING'}
+      </div>
 
       {/* Price — bigger + bold */}
       <div className="text-xl font-bold text-gray-800 text-end truncate ">
-        ${data?.price}
+        ${data?.price || '0.00'}
       </div>
 
       <div className="text-sm flex items-center justify-between gap-2">
@@ -241,7 +229,7 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
   // React Query - for fetching data via api
   const {
     data: suppliers = [],
-    isLoading,
+    isLoading: suppliersLoading,
     error,
   } = useQuery({
     queryKey: ['suppliers'],
@@ -313,6 +301,7 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
             <h3 className="font-semibold  mb-3 text-xl">Choose a supplier:</h3>
 
             <div className="space-y-2 mb-6 max-h-72 overflow-auto p-2 border rounded">
+              <BasicLoader waitFor={suppliersLoading} />
               {suppliers.map((sup) => (
                 <button
                   key={sup.id}

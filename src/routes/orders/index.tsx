@@ -1,4 +1,5 @@
 import { deleteOrderMutation, fetchOrders } from '@/api/api'
+import PageLoader from '@/components/PageLoader'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideListFilter, LucideMenu } from 'lucide-react'
@@ -19,7 +20,7 @@ function RouteComponent() {
     queryFn: fetchOrders,
   })
 
-  if (isLoading) return <p>Loading user...</p>
+  if (isLoading) return <PageLoader />
   if (error) return <p>Something went wrong</p>
   return (
     <>
@@ -132,7 +133,7 @@ const OrderListNode = ({ data }) => {
       <div className="ms-auto relative">
         <LucideMenu
           size={32}
-          className="bg-white p-0.5 rounded border cursor-pointer text-black shadow"
+          className=" p-1.5 ursor-pointer text-black "
           onClick={(e) => {
             e.stopPropagation()
             setOptionExpanded(!optionExpanded)

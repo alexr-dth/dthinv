@@ -1,4 +1,5 @@
 import { fetchOrderById } from '@/api/api'
+import PageLoader from '@/components/PageLoader'
 import { useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
@@ -35,7 +36,7 @@ function RouteComponent() {
     navigate({ to: '/orders' })
   }, [isLoading, data, navigate])
 
-  if (isLoading) return <p>Loading user...</p>
+  if (isLoading) return <PageLoader />
   if (error) return <p>Something went wrong</p>
   return (
     <>

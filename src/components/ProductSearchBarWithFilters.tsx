@@ -5,7 +5,7 @@ export default function ProductSearchBarWithFilters() {
   const [expanded, setExpanded] = useState(false)
   return (
     <div className="mb-2">
-      <div className="flex items-center gap-1 mb-3">
+      <div className="flex items-center gap-1 ">
         <input
           type="search"
           className="form-control flex-1"

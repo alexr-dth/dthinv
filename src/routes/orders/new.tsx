@@ -1,4 +1,5 @@
 import { fetchItems } from '@/api/api'
+import PageLoader from '@/components/PageLoader'
 import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -51,7 +52,7 @@ function RouteComponent() {
     navigate({ to: '/orders' })
   }
 
-  if (isLoading) return <p>Loading...</p>
+  if (isLoading) return <PageLoader />
   if (error) return <p>Error: {error.message}</p>
   return (
     <>

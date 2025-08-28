@@ -28,6 +28,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.6.0",
+    "react-sortablejs": "^6.1.4",
+    "sortablejs": "^1.15.6",
     "tailwindcss": "^4.0.6"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@testing-library/react": "^16.2.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "@types/sortablejs": "^1.15.8",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^26.0.0",

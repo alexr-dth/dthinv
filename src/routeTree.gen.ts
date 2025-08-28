@@ -10,23 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReceiveRouteImport } from './routes/receive'
-import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as LocationsIndexRouteImport } from './routes/locations/index'
 import { Route as ItemsIndexRouteImport } from './routes/items/index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
+import { Route as LocationsLocationIdItemsRouteImport } from './routes/locations/$locationId.items'
 
 const ReceiveRoute = ReceiveRouteImport.update({
   id: '/receive',
   path: '/receive',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocationsRoute = LocationsRouteImport.update({
-  id: '/locations',
-  path: '/locations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocationsIndexRoute = LocationsIndexRouteImport.update({
+  id: '/locations/',
+  path: '/locations/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ItemsIndexRoute = ItemsIndexRouteImport.update({
@@ -64,87 +65,100 @@ const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocationsLocationIdItemsRoute =
+  LocationsLocationIdItemsRouteImport.update({
+    id: '/locations/$locationId/items',
+    path: '/locations/$locationId/items',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/locations': typeof LocationsRoute
   '/receive': typeof ReceiveRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/orders/new': typeof OrdersNewRoute
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory': typeof InventoryIndexRoute
   '/items': typeof ItemsIndexRoute
+  '/locations': typeof LocationsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/locations': typeof LocationsRoute
   '/receive': typeof ReceiveRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/orders/new': typeof OrdersNewRoute
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory': typeof InventoryIndexRoute
   '/items': typeof ItemsIndexRoute
+  '/locations': typeof LocationsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/locations': typeof LocationsRoute
   '/receive': typeof ReceiveRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/orders/new': typeof OrdersNewRoute
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory/': typeof InventoryIndexRoute
   '/items/': typeof ItemsIndexRoute
+  '/locations/': typeof LocationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/locations'
     | '/receive'
     | '/orders/$orderId'
     | '/orders/new'
     | '/suppliers/add'
     | '/inventory'
     | '/items'
+    | '/locations'
     | '/orders'
+    | '/locations/$locationId/items'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/locations'
     | '/receive'
     | '/orders/$orderId'
     | '/orders/new'
     | '/suppliers/add'
     | '/inventory'
     | '/items'
+    | '/locations'
     | '/orders'
+    | '/locations/$locationId/items'
   id:
     | '__root__'
     | '/'
-    | '/locations'
     | '/receive'
     | '/orders/$orderId'
     | '/orders/new'
     | '/suppliers/add'
     | '/inventory/'
     | '/items/'
+    | '/locations/'
     | '/orders/'
+    | '/locations/$locationId/items'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LocationsRoute: typeof LocationsRoute
   ReceiveRoute: typeof ReceiveRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   OrdersNewRoute: typeof OrdersNewRoute
   SuppliersAddRoute: typeof SuppliersAddRoute
   InventoryIndexRoute: typeof InventoryIndexRoute
   ItemsIndexRoute: typeof ItemsIndexRoute
+  LocationsIndexRoute: typeof LocationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  LocationsLocationIdItemsRoute: typeof LocationsLocationIdItemsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,13 +168,6 @@ declare module '@tanstack/react-router' {
       path: '/receive'
       fullPath: '/receive'
       preLoaderRoute: typeof ReceiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/locations': {
-      id: '/locations'
-      path: '/locations'
-      fullPath: '/locations'
-      preLoaderRoute: typeof LocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -175,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/locations/': {
+      id: '/locations/'
+      path: '/locations'
+      fullPath: '/locations'
+      preLoaderRoute: typeof LocationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/items/': {
@@ -212,19 +226,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/locations/$locationId/items': {
+      id: '/locations/$locationId/items'
+      path: '/locations/$locationId/items'
+      fullPath: '/locations/$locationId/items'
+      preLoaderRoute: typeof LocationsLocationIdItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LocationsRoute: LocationsRoute,
   ReceiveRoute: ReceiveRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
   OrdersNewRoute: OrdersNewRoute,
   SuppliersAddRoute: SuppliersAddRoute,
   InventoryIndexRoute: InventoryIndexRoute,
   ItemsIndexRoute: ItemsIndexRoute,
+  LocationsIndexRoute: LocationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  LocationsLocationIdItemsRoute: LocationsLocationIdItemsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

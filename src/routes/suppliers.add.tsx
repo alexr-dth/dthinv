@@ -1,6 +1,6 @@
 import { addItemMutation, addSupplierMutation } from '@/api/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -13,6 +13,7 @@ function RouteComponent() {
   const [items, setItems] = useState([])
   const [supplierName, setSupplierName] = useState('')
   const queryClient = useQueryClient()
+  const navigate = useNavigate();
 
   const { mutateAsync: createSupplier } = useMutation({
     mutationFn: addSupplierMutation,
@@ -40,6 +41,7 @@ function RouteComponent() {
     } finally {
       toast.success('Added supplier')
       btn.disabled = false
+      navigate({to: "/items"})
     }
   }
 
@@ -72,16 +74,15 @@ function RouteComponent() {
             <Link to="/" className="action-link !ps-0">
               Home
             </Link>
-            <button onClick={() => window.history.back()} className="action-link px-1">
+            <button
+              onClick={() => window.history.back()}
+              className="action-link px-1"
+            >
               Back
             </button>
           </div>
 
-          <button
-            className="action-link"
-            onClick={addSupplierWithItems}
-            disabled
-          >
+          <button className="action-link" onClick={addSupplierWithItems}>
             Save
           </button>
         </div>
@@ -109,7 +110,7 @@ function RouteComponent() {
           ))}
           <li>
             <button
-              className={`btn w-full mt-6`}
+              className={`action-link w-full mt-6`}
               onClick={() => setItems((prev) => [...prev, { id: Date.now() }])}
             >
               Add item
