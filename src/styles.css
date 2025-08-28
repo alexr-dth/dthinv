@@ -38,3 +38,19 @@ code {
 .action-link.disabled {
   @apply !text-gray-300 !cursor-not-allowed
 }
+
+.status-approved {
+  @apply bg-green-200 text-green-900; /* Success / Approved */
+}
+
+.status-pending-approval {
+  @apply bg-yellow-200 text-yellow-900; /* Waiting / Pending */
+}
+
+.status-open-order {
+  @apply bg-blue-200 text-blue-900; /* Active / Open */
+}
+
+.status-undefined {
+  @apply bg-gray-200 text-gray-900;
+}

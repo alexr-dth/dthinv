@@ -1,4 +1,147 @@
-const sampleItems = [
+// emulate api requests, change this later
+
+/* ===========START ORDERS=========== */
+export const fetchOrders = async () => {
+  await new Promise((res) => setTimeout(res, 1000))
+  return sampleOrders
+}
+
+export const fetchOrderById = async (id) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  const target = sampleOrders.find((o) => o.id == id);
+  console.log(id);
+  console.log(target)
+  return target || {};
+}
+
+export const addOrderMutation = async (newData) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  newData.id = Date.now()
+  sampleOrders.push(newData)
+
+  console.log(
+    `%c>> Added order:'${JSON.stringify(newData)}'`,
+    'color: #eb4034;',
+  )
+}
+
+export const deleteOrderMutation = async (id) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  sampleOrders = sampleOrders.filter((p) => p.id != id)
+  console.log(`%c>> Deleted order:'${JSON.stringify(id)}'`, 'color: #eb4034;')
+}
+/* ===========END ORDERS=========== */
+
+/* ===========START SUPPLIERS=========== */
+export const fetchSuppliers = async () => {
+  await new Promise((res) => setTimeout(res, 1000))
+  return sampleSuppliers
+}
+
+export const addSupplierMutation = async (newData) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  newData.id = Date.now()
+  sampleSuppliers.push(newData)
+
+  console.log(
+    `%c>> Added supplier:'${JSON.stringify(newData)}'`,
+    'color: #eb4034;',
+  )
+}
+/* ===========END SUPPLIERS=========== */
+
+/* ===========START ITEMS=========== */
+export const fetchItems = async () => {
+  await new Promise((res) => setTimeout(res, 1000))
+  return sampleItems
+}
+export const addItemMutation = async (newData) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  if (Array.isArray(newData)) {
+    sampleItems.push(...newData)
+    console.log(
+      `%c>> Added multiple items: '${JSON.stringify(newData)}'`,
+      'color: #eb4034;',
+    )
+  } else {
+    sampleItems.push(newData)
+    console.log(
+      `%c>> Added item:'${JSON.stringify(newData)}'`,
+      'color: #eb4034;',
+    )
+  }
+}
+export const editItemMutation = async (newData) => {
+  await new Promise((res) => setTimeout(res, 1000))
+  const targetIndex = sampleItems.findIndex(({ id }) => id == newData?.id)
+  sampleItems[targetIndex] = newData
+}
+/* ===========END ITEMS=========== */
+
+let sampleOrders = [
+  {
+    id: '1',
+    supplier: 'Home Depot',
+    supplier_tracking_number: 'HD-4582391',
+    internal_tracking_number: 'INT-2023-001',
+    order_name: 'Lumber and Tools',
+    status: 'open-order',
+    total_price: 1250.75,
+    approver: 'Jacob',
+    approval_notes: '',
+    notes: '',
+  },
+  {
+    id: '2',
+    supplier: "Lowe's",
+    supplier_tracking_number: 'LW-9823746',
+    internal_tracking_number: 'INT-2023-002',
+    order_name: 'Paint Supplies',
+    status: 'pending-approval',
+    total_price: 430.0,
+    approver: 'Michael',
+    approval_notes: '',
+    notes: '',
+  },
+  {
+    id: '3',
+    supplier: 'Amazon Business',
+    supplier_tracking_number: 'AMZ-7461820',
+    internal_tracking_number: 'INT-2023-003',
+    order_name: 'Office Chairs',
+    status: 'approved',
+    total_price: 2100.99,
+    approver: 'Jacob',
+    approval_notes: '',
+    notes: '',
+  },
+  {
+    id: '4',
+    supplier: 'Staples',
+    supplier_tracking_number: 'STP-5639201',
+    internal_tracking_number: 'INT-2023-004',
+    order_name: 'Printer Paper & Ink',
+    status: 'open-order',
+    total_price: 299.49,
+    approver: 'Michael',
+    approval_notes: '',
+    notes: '',
+  },
+  {
+    id: '5',
+    supplier: 'Costco Business',
+    supplier_tracking_number: 'CST-8741923',
+    internal_tracking_number: 'INT-2023-005',
+    order_name: 'Kitchen Supplies',
+    status: 'approved',
+    total_price: 890.2,
+    approver: 'Jacob',
+    approval_notes: '',
+    notes: '',
+  },
+]
+
+let sampleItems = [
   {
     id: '1',
     image: '/warehouse.jpg',
@@ -101,7 +244,7 @@ const sampleItems = [
   },
 ]
 
-const sampleSuppliers = [
+let sampleSuppliers = [
   { id: '1', name: 'Home Depot' },
   { id: '2', name: 'Amazon' },
   { id: '3', name: 'Hardware Resources' },
@@ -110,51 +253,3 @@ const sampleSuppliers = [
   { id: '6', name: 'Acme Brick' },
   { id: '7', name: 'Sherwin-Williams' },
 ]
-
-// emulate api requests, change this later
-
-/* ===========START SUPPLIERS=========== */
-export const fetchSuppliers = async () => {
-  await new Promise((res) => setTimeout(res, 1000))
-  return sampleSuppliers
-}
-
-export const addSupplierMutation = async (newData) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  newData.id = Date.now();
-  sampleSuppliers.push(newData);
-  
-  console.log(
-    `%c>> Added supplier:'${JSON.stringify(newData)}'`,
-    'color: #eb4034;',
-  )
-}
-/* ===========END SUPPLIERS=========== */
-
-/* ===========START ITEMS=========== */
-export const fetchItems = async () => {
-  await new Promise((res) => setTimeout(res, 1000))
-  return sampleItems
-}
-export const addItemMutation = async (newData) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  if (Array.isArray(newData)) {
-    sampleItems.push(...newData)
-    console.log(
-      `%c>> Added multiple items: '${JSON.stringify(newData)}'`,
-      'color: #eb4034;',
-    )
-  } else {
-    sampleItems.push(newData)
-    console.log(
-      `%c>> Added item:'${JSON.stringify(newData)}'`,
-      'color: #eb4034;',
-    )
-  }
-}
-export const editItemMutation = async (newData) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  const targetIndex = sampleItems.findIndex(({ id }) => id == newData?.id)
-  sampleItems[targetIndex] = newData
-}
-/* ===========END ITEMS=========== */

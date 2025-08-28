@@ -1,28 +1,42 @@
+import { fetchOrderById } from '@/api/api'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/orders/$orderId')({
   component: RouteComponent,
-  loader: ({ context: { queryClient }, params }) => {
-    return {
-      orderId: params.orderId,
-    }
-  },
 })
 
 function RouteComponent() {
-  const { orderId } = Route.useLoaderData()
+  const { orderId } = useParams({ from: '/orders/$orderId' })
   const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
+  const navigate = useNavigate()
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => ({}),
+  const {
+    data = {},
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['orders', String(orderId)],
+    queryFn: () => fetchOrderById(orderId),
   })
+
+  useEffect(() => {
+    if (isLoading) return
+    if (Object.keys(data).length) return
+
+    toast.error('Order not found')
+    navigate({ to: '/orders' })
+  }, [isLoading, data, navigate])
 
   if (isLoading) return <p>Loading user...</p>
   if (error) return <p>Something went wrong</p>
-
   return (
     <>
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
@@ -42,59 +56,61 @@ function RouteComponent() {
         <div className="space-y-2">
           <div>
             <span className="font-bold text-sm">Order Name:</span> <br />
-            <span> Order made by Jacob Pajunen</span>
+            <span> {data.order_name}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Supplier Order Number:</span>{' '}
             <br />
-            <span>H0110-345654</span>
+            <span>#{data.supplier_tracking_number}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Notes:</span> <br />
-            <span>N/A</span>
+            <span>{data.notes || 'N/A'}</span>
           </div>
+
+          <hr />
 
           <div>
             <span className="font-bold text-sm">Approver:</span> <br />
-            <span>Marvin Martino</span>
+            <span>{data.approver || 'N/A'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Approval Notes:</span> <br />
-            <span>N/A</span>
+            <span>{data.approval_notes || 'N/A'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
-            <span>Approved</span>
+            <span className="uppercase">{data.status?.replace('-', ' ')}</span>
           </div>
         </div>
 
-        <div className="border rounded pb-2 mt-4">
-          <h3 className=" p-2   flex justify-between items-center gap-1 border-b-1">
-            <span className="text-lg font-semibold uppercase">Home Depot</span>
-            <span className="text-xs">(13 items)</span>
-          </h3>
+        <button
+          className="action-link underline text-xs text-end w-full block mb-1"
+          onClick={() => {
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: 'smooth',
+            })
+          }}
+        >
+          see total
+        </button>
 
-          <ul className="space-y-2 divide-y divide-gray-400 px-2">
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-          </ul>
+        <div className="space-y-2">
+          <OrderSet />
+          <OrderSet />
+          <OrderSet />
+          <OrderSet />
         </div>
 
-        <div className="border-t-8 text-end mt-5 pt-2 mb-5">
-          <div>
-            Total(10 Items): <span className="font-bold">$1000.000</span>
+        <div className="border-t-8 text-end mt-5 pt-2 mb-10">
+          <div className="bg-gray-200 p-2 rounded shadow flex items-center justify-end gap-1">
+            <span className="text-sm">All Total (10 Items):</span>
+            <span className="font-bold text-xl">$123.00</span>
           </div>
         </div>
 
@@ -203,5 +219,36 @@ const ItemNode = ({ data }) => {
         </div>
       )}
     </li>
+  )
+}
+
+const OrderSet = () => {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div>
+      <div className="border rounded">
+        <h3
+          className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
+          onClick={() => setExpanded(!expanded)}
+        >
+          <span className="text-lg font-semibold uppercase">
+            {'Home Depot'}
+          </span>
+          <span className="text-xs">(13 items)</span>
+          <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
+        </h3>
+
+        {expanded && (
+          <ul className="space-y-2 divide-y divide-gray-400 px-2 pb-2">
+            <ItemNode data={{}} />
+            <ItemNode data={{}} />
+            <ItemNode data={{}} />
+            <li className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
+              Total (10 Items): <span className="font-bold">$123.00</span>
+            </li>
+          </ul>
+        )}
+      </div>
+    </div>
   )
 }
