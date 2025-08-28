@@ -1,6 +1,7 @@
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanstackDevtools } from '@tanstack/react-devtools'
+import { Toaster } from 'react-hot-toast'
 
 import Header from '../components/Header'
 
@@ -16,6 +17,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
       {/* <Header /> */}
+      <Toaster position="top-right" reverseOrder={true} />
       <Outlet />
       <TanstackDevtools
         config={{

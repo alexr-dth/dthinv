@@ -15,9 +15,26 @@ code {
 }
 
 .btn {
-  @apply bg-gray-100 w-full p-2 text-center border rounded cursor-pointer disabled:bg-red-500
+  @apply bg-gray-100 p-2 text-center border rounded cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed
 }
 
 .btn.disabled {
-  @apply bg-gray-200 opacity-50
+  @apply !bg-gray-200 !opacity-50 !cursor-not-allowed
+}
+
+.btn.btn-blue {
+  @apply !bg-blue-500 hover:!bg-blue-600 text-white 
+}
+
+.form-control {
+  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed
+}
+
+
+.action-link {
+  @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed
+}
+
+.action-link.disabled {
+  @apply !text-gray-300 !cursor-not-allowed
 }

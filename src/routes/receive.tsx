@@ -167,13 +167,19 @@ function RouteComponent() {
       )}
 
       <div className="mx-3 sm:w-sm sm:mx-auto mt-5 border rounded p-3">
-        <Link to="/" className="text-blue-500">
-          Home
-        </Link>
+        <div className="divide-x ">
+          <Link to="/" className="action-link !ps-0">
+            Home
+          </Link>
+          <button
+            onClick={() => window.history.back()}
+            className="action-link px-1"
+          >
+            Back
+          </button>
+        </div>
 
-        <h2 className="text-2xl text-center mb-3 font-bold">
-          Receive Items
-        </h2>
+        <h2 className="text-2xl text-center mb-3 font-bold">Receive Items</h2>
 
         <div>
           <form onSubmit={searchCode}>

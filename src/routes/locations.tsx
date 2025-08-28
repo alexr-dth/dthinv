@@ -1,14 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  LucideBarcode,
-  LucideEye,
-  LucideHouse,
-  LucideMenu,
-  LucidePlus,
-  LucideSquarePen,
-} from 'lucide-react'
+import { LucideMenu } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 
 const depthColors = [
@@ -99,7 +92,11 @@ const sampleLocations = [
   },
 ]
 
-// emulate api requests, change this later
+// emulate get api requests, change this later
+const fetchLocations = async () => {
+  return sampleLocations
+}
+// emulate post/patch/delete api requests, change this later
 const addLocationMutation = async (newLocation) => {
   await new Promise((res) => setTimeout(res, 1000))
   sampleLocations.push(newLocation)
@@ -111,6 +108,7 @@ const editLocationMutation = async (newData) => {
   sampleLocations[targetIndex] = newData
 }
 
+// Helper
 const buildTree = (data, parentId = '') => {
   return data
     .filter((item) => item.parentId === parentId)
@@ -120,27 +118,26 @@ const buildTree = (data, parentId = '') => {
     }))
 }
 
-async function fetchLocations() {
-  return sampleLocations
-}
-
 // MAIN APP
 export const Route = createFileRoute('/locations')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
+  // Initial declaration for hooks
   const queryClient = useQueryClient()
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
 
+  // React Query - for fetching data via api
   const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey: ['locations'],
     queryFn: fetchLocations,
   })
 
+  // React Query - for mutating/updating data via api
   const { mutateAsync: createLocation } = useMutation({
     mutationFn: addLocationMutation,
     onSuccess: () => queryClient.invalidateQueries(['locations']),
@@ -151,8 +148,10 @@ function RouteComponent() {
     onSuccess: () => queryClient.invalidateQueries(['locations']),
   })
 
+  // Helpers - structuring data to be json-tree shape
   const treeData = useMemo(() => buildTree(data || []), [dataUpdatedAt])
 
+  // Functions
   const closeModal = () => setActiveModal(null)
 
   const addLocation = async (e) => {
@@ -203,6 +202,7 @@ function RouteComponent() {
     }
   }
 
+  // UI/UX
   if (isLoading) return <p>Loading...</p>
   if (error) return <p>Error: {error.message}</p>
   return (
@@ -244,18 +244,30 @@ function RouteComponent() {
         </div>
       )}
 
-      <div className="mx-3 sm:w-sm sm:mx-auto mt-5 border rounded p-3">
-        <Link to="/" className='text-blue-500'>Home</Link>
+      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+        <div className="divide-x ">
+          <Link to="/" className="action-link !ps-0">
+            Home
+          </Link>
+          <button
+            onClick={() => window.history.back()}
+            className="action-link px-1"
+          >
+            Back
+          </button>
+        </div>
         <h2 className="text-2xl text-center mb-3 font-bold">
           Warehouse Locations
         </h2>
         <button
-          className="bg-gray-100 w-full p-2 text-center border rounded mb-6 cursor-pointer"
+          className="bg-gray-100 w-full p-2 text-center border rounded cursor-pointer"
           onClick={() => setActiveModal({ name: 'addLocation' })}
         >
           Add location
         </button>
-        <ul className="space-y-3">
+
+        <button className="text-blue-500 mt-6 mb-2">Expand all</button>
+        <ul className="space-y-3 ">
           {treeData.map((node) => (
             <TreeNode
               key={node.id}
@@ -305,9 +317,9 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
           />
           {optionExpanded && (
             <div className="absolute border bg-white shadow p-1 rounded right-full top-0">
-              <div className="flex flex-col">
+              <div className="flex flex-col divide-y divide-gray-400">
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap border-b-1"
+                  className="text-lg py-1 px-3 text-black text-nowrap"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -317,7 +329,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Image
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap border-b-1"
+                  className="text-lg py-1 px-3 text-black text-nowrap"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -327,7 +339,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Barcode
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap border-b-1"
+                  className="text-lg py-1 px-3 text-black text-nowrap"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -530,8 +542,8 @@ const AddLocationModal = ({ saveCallback, cancelCallback }) => {
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold mb-3 text-xl">Add location</h3>
-        <div className="flex flex-col gap-1">
+        <h3 className="font-semibold  mb-3 text-xl">Add location</h3>
+        <div className="flex flex-col gap-1 ">
           <input
             name="name"
             type="text"
