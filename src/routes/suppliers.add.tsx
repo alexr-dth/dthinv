@@ -1,7 +1,7 @@
 import { addItemMutation, addSupplierMutation } from '@/api/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/suppliers/add')({
@@ -11,9 +11,8 @@ export const Route = createFileRoute('/suppliers/add')({
 function RouteComponent() {
   const [expanded, setExpanded] = useState(-1)
   const [items, setItems] = useState([])
-  const [supplierName, setSupplierName] = useState('')
   const queryClient = useQueryClient()
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const { mutateAsync: createSupplier } = useMutation({
     mutationFn: addSupplierMutation,
@@ -25,33 +24,45 @@ function RouteComponent() {
     onSuccess: () => queryClient.invalidateQueries(['items']),
   })
 
-  const addSupplierWithItems = async (e) => {
-    if (!supplierName.length) return toast.error('Invalid supplier name')
-
-    const btn = e.target
+  const handleAddSupplierWithItems = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = e.nativeEvent.submitter
     btn.disabled = true
-
     try {
-      const newItems = items
-        .filter(({ name }) => !!name)
-        .map((i) => ({ ...i, supplier: supplierName }))
+      const supplierName = form.elements['name']?.value
+      const supplierQr = form.elements['barcode_qr']?.value
+      const newSupplier = { name: supplierName, barcode_qr: supplierQr }
 
-      await createSupplier({ name: supplierName })
-      await createItem(newItems)
-    } finally {
+      const { id: supplierId } = await createSupplier(newSupplier)
       toast.success('Added supplier')
+      if (!items.length) return
+      try {
+        newSupplier.id = supplierId
+        const newItems = items
+          .filter(({ name }) => !!name)
+          .map((i) => ({
+            ...i,
+            id: undefined,
+            supplier: newSupplier,
+          }))
+        if (!newItems.length) return
+
+        // TESTING: This would only add the first item. need server to add items synchrounously
+        await createItem(newItems[0])
+        toast.success('Added supplier')
+      } catch (error) {
+        toast.error('Error adding items')
+      }
+    } finally {
       btn.disabled = false
-      navigate({to: "/items"})
+      navigate({ to: '/items' })
     }
   }
 
-  const removeItem = (id) => {
+  const handleRemoveItem = (id) =>
     setItems((prev) => prev.filter((p) => p.id != id))
-  }
-
-  const handleExpand = (id) => {
-    setExpanded(id == expanded ? -1 : id)
-  }
+  const handleExpand = (id) => setExpanded(id == expanded ? -1 : id)
   const handleFieldUpdate = ({ target }, id) => {
     const { name, value } = target
     setItems((prev) =>
@@ -82,30 +93,49 @@ function RouteComponent() {
             </button>
           </div>
 
-          <button className="action-link" onClick={addSupplierWithItems}>
+          <button
+            type="submit"
+            className="action-link"
+            form="new-supplier-form"
+          >
             Save
           </button>
         </div>
-        <h2 className="text-2xl text-center mb-3 font-bold">Add Supplier</h2>
+        <h2 className="page-title">Add Supplier</h2>
 
-        <input
-          type="text"
-          className="form-control w-full mb-5"
-          placeholder="Supplier's name"
-          value={supplierName}
-          onChange={(e) => setSupplierName(e.currentTarget.value)}
-        />
+        <form
+          onSubmit={handleAddSupplierWithItems}
+          id="new-supplier-form"
+          method="post"
+          className="space-y-1 mb-5"
+        >
+          <input
+            type="text"
+            name="name"
+            className="form-control w-full"
+            placeholder="Supplier's name"
+            required
+          />
+
+          <input
+            type="text"
+            name="barcode_qr"
+            className="form-control w-full"
+            placeholder="QR Code"
+            required
+          />
+        </form>
 
         <ul className="space-y-1">
           {items.map((i, index) => (
-            <SupplierItem
+            <NewSupplierItem
               key={i.id}
               data={i}
               index={index}
               expanded={expanded == i.id}
               setExpanded={handleExpand}
               formUpdate={handleFieldUpdate}
-              removeCallback={removeItem}
+              removeCallback={handleRemoveItem}
             />
           ))}
           <li>
@@ -122,7 +152,7 @@ function RouteComponent() {
   )
 }
 
-const SupplierItem = ({
+const NewSupplierItem = ({
   data,
   index,
   expanded = false,
@@ -130,57 +160,73 @@ const SupplierItem = ({
   formUpdate,
   removeCallback,
 }) => {
+  const nameRef = useRef(null)
+
   return (
-    <li className="border">
+    <li className="border cursor-pointer">
       <div
-        className={`${expanded && 'border-b bg-blue-400 !text-white font-bold'} p-2 flex gap-2`}
+        className={`${expanded && 'border-b bg-blue-400 !text-white font-bold'} p-2 flex items-center gap-2`}
         onClick={() => setExpanded(data.id)}
       >
-        Item {index + 1}
+        <span>Item {index + 1}</span>
+        <span className={`${expanded && '!text-white'} ${nameRef.current && nameRef.current.value && `hidden`} text-gray-500 text-xs`}>
+           (name required)
+        </span>
         <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
       </div>
 
-      {expanded && (
-        <div className="p-3 ">
-          <form
-            onChange={(e) => formUpdate(e, data.id)}
-            className="flex flex-col space-y-1"
-          >
-            <textarea name="name" placeholder="Name" className="form-control" />
-            <input
-              name="sku"
-              type="text"
-              placeholder="SKU"
-              className="form-control"
-            />
-            <input
-              name="internal_sku"
-              type="text"
-              placeholder="Internal SKU"
-              className="form-control"
-            />
-            <input
-              name="price"
-              type="text"
-              placeholder="Price"
-              className="form-control"
-            />
-            <input
-              name="stock"
-              type="text"
-              placeholder="Stock"
-              className="form-control"
-            />
-          </form>
+      <div className={`${!expanded && 'hidden'} p-3`}>
+        <form
+          onChange={(e) => formUpdate(e, data.id)}
+          className="flex flex-col space-y-1"
+        >
+          <select name="image" className="form-control">
+            <option value="/warehouse.jpg">Test - Warehouse</option>
+            <option value="/pliers.jpg">Test - Pliers</option>
+            <option value="/wrench.jpg">Test - Wrench</option>
+            <option value="/drill.jpg">Test - Drill</option>
+          </select>
+          <textarea
+            name="name"
+            placeholder="*Name"
+            className="form-control required"
+            ref={nameRef}
+          />
+          <input
+            name="external_sku"
+            type="text"
+            placeholder="External SKU"
+            className="form-control"
+          />
+          <input
+            name="internal_sku"
+            type="text"
+            placeholder="Internal SKU"
+            className="form-control"
+          />
+          <input
+            name="price"
+            type="number"
+            placeholder="Price"
+            defaultValue={0}
+            className="form-control"
+          />
+          <input
+            name="stocks"
+            type="number"
+            placeholder="Stocks"
+            defaultValue={0}
+            className="form-control"
+          />
+        </form>
 
-          <button
-            className="block ms-auto mt-3 action-link !text-red-500"
-            onClick={(e) => removeCallback(data.id)}
-          >
-            Delete
-          </button>
-        </div>
-      )}
+        <button
+          className="block ms-auto mt-3 action-link !text-red-500"
+          onClick={(e) => removeCallback(data.id)}
+        >
+          Delete
+        </button>
+      </div>
     </li>
   )
 }

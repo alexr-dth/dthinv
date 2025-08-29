@@ -5,9 +5,11 @@ dist
 dist-ssr
 db.json
 todo.md
+snippets.ts
 *.local
 count.txt
 .env
 .nitro
 .tanstack
+
 

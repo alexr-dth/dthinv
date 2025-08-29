@@ -50,13 +50,8 @@ export const fetchSuppliers = async () => {
 }
 export const addSupplierMutation = async (newData) => {
   // await new Promise((res) => setTimeout(res, 1000))
-  if (Array.isArray(newData)) {
-    await Promise.all(
-      newData.map((d) => axios.post(BASE_API + '/suppliers', d)),
-    )
-  } else {
-    await axios.post(BASE_API + '/suppliers', newData)
-  }
+  const { data } = await axios.post(BASE_API + '/suppliers', newData)
+  return data
 }
 export const editSupplierMutation = async (newData) => {
   // await new Promise((res) => setTimeout(res, 1000))
@@ -66,7 +61,7 @@ export const removeSupplierMutation = async (newData) => {
   // await new Promise((res) => setTimeout(res, 1000))
   await axios.delete(BASE_API + `/suppliers/${newData.id}`)
 }
-// #region
+// #endregion
 
 // #region ═══════════ ITEMS ═══════════ //
 export const fetchItems = async () => {
@@ -76,11 +71,8 @@ export const fetchItems = async () => {
 }
 export const addItemMutation = async (newData) => {
   // await new Promise((res) => setTimeout(res, 1000))
-  if (Array.isArray(newData)) {
-    await Promise.all(newData.map((d) => axios.post(BASE_API + '/items', d)))
-  } else {
-    await axios.post(BASE_API + '/items', newData)
-  }
+  const { data } = await axios.post(BASE_API + '/items', newData)
+  return data
 }
 export const editItemMutation = async (newData) => {
   // await new Promise((res) => setTimeout(res, 1000))

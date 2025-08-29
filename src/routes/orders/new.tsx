@@ -144,7 +144,7 @@ function RouteComponent() {
             Save
           </button>
         </div>
-        <h2 className="text-2xl text-center mb-3 font-bold">Create Order</h2>
+        <h2 className="page-title">Create Order</h2>
 
         <form id="order-form" method="post" onSubmit={handleSubmitOrder}>
           <div className="flex flex-col space-y-1">
@@ -200,7 +200,7 @@ function RouteComponent() {
 
             <div className="grid grid-cols-2 gap-3 ">
               {data?.map((item) => (
-                <ItemBuyCard
+                <ProductGridCard
                   key={item.id}
                   data={item}
                   setActiveModal={setActiveModal}
@@ -245,45 +245,53 @@ function RouteComponent() {
   )
 }
 
-const ItemBuyCard = ({ data, setActiveModal }) => {
+const ProductGridCard = ({ data, setActiveModal }) => {
   return (
     <div className="rounded border p-2 h-full flex flex-col">
-      <img
-        src={data.image || 'missing.jpg'}
-        alt=""
-        className="w-full aspect-square object-cover mb-2"
-      />
-      <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
-        {data.supplier?.name || 'n/a'}
-      </div>
-
-      <div className="text-lg leading-5 line-clamp-2 mb-3 flex-grow-1 flex-shrink-0">
-        {data.name || 'n/a'}
-      </div>
-
-      <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-        {data.external_sku || 'n/a'}
-      </div>
-
-      <div className="text-xs text-gray-400 truncate">{data?.internal_sku}</div>
-
-      <div className="flex items-center gap-2">
-        <div className="w-2/5 me-auto text-nowrap font-medium text-sm truncate">
-          <span className="font-semibold">Stk:</span>{' '}
-          <span className="">{data.stocks || 0}</span>
+      {/* CONTENT */}
+      <div className="flex flex-col">
+        <img
+          src={data.image || 'missing.jpg'}
+          alt=""
+          className="w-full aspect-square object-cover mb-2"
+        />
+        <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
+          {data.supplier?.name || 'n/a'}
         </div>
 
-        <div className="w-3/5 text-2xl font-bold text-gray-800 truncate text-end">
-          ${data.price?.toFixed(2) || 'n/a'}
+        <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
+          {data.name || 'n/a'}
+        </div>
+
+        <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
+          {data.external_sku || 'n/a'}
+        </div>
+
+        <div className="text-xs text-gray-400 truncate">
+          {data?.internal_sku || 'n/a'}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-2/5 me-auto text-nowrap font-medium text-sm truncate">
+            <span className="font-semibold">Stk:</span>{' '}
+            <span className="">{data.stocks || 0}</span>
+          </div>
+
+          <div className="w-3/5 text-2xl font-bold text-gray-800 truncate text-end">
+            ${data.price?.toFixed(2) || 'n/a'}
+          </div>
         </div>
       </div>
 
-      <button
-        className="action-link text-end text-sm"
-        onClick={() => setActiveModal({ name: 'addOrder', data: data })}
-      >
-        Add order
-      </button>
+      {/* ACTIONS */}
+      <div className="flex justify-end">
+        <button
+          className="action-link text-end text-sm"
+          onClick={() => setActiveModal({ name: 'addOrder', data: data })}
+        >
+          Add order
+        </button>
+      </div>
     </div>
   )
 }
@@ -291,6 +299,7 @@ const ItemBuyCard = ({ data, setActiveModal }) => {
 const ItemInCartCard = ({ data: item, setActiveModal, actionCallback }) => {
   return (
     <div className="rounded border p-2 h-full flex gap-2">
+      <div></div>
       <img
         src={item.image || 'missing.jpg'}
         alt=""

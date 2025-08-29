@@ -28,24 +28,29 @@ code {
 
 input[type='text'].form-control,
 input[type='search'].form-control,
-input[type='number'].form-control,
+input[type='number'].form-control {
+  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed;
+}
+
+input[type='text'].form-control.required,
+input[type='search'].form-control.required,
+input[type='number'].form-control.required,
+select.form-control.required,
+textarea.form-control.required {
+  @apply placeholder-shown:border-blue-500 placeholder-shown:focus:outline-blue-500;
+}
+
 select.form-control,
 textarea.form-control {
   @apply border rounded p-2;
 }
 
-input[type='text'].form-control,
-input[type='search'].form-control,
-input[type='number'].form-control {
-  @apply read-only:bg-gray-200 read-only:cursor-not-allowed;
-}
-
 input[type='file'].form-control {
-  @apply border rounded p-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
+  @apply py-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
 }
 
 .action-link {
-  @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed disabled:line-through aria-selected:text-blue-200 ;
+  @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed disabled:line-through aria-selected:text-blue-200;
 }
 
 .action-link.disabled {

@@ -45,7 +45,11 @@ function RouteComponent() {
         </div>
         <h2 className="page-title">All Orders</h2>
 
-        <div className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2">
+        {/* BELOW-TITLE OPTIONS */}
+        <div
+          id="title-buttons"
+          className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2"
+        >
           <Link className="action-link" to="/orders/new">
             New order
           </Link>
