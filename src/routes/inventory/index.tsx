@@ -1,4 +1,5 @@
-import { fetchItems } from '@/api/api'
+import { fetchItems, fetchSuppliers } from '@/api/api'
+import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
 import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
@@ -55,7 +56,7 @@ function RouteComponent() {
     }
   }
   if (isLoading) return <PageLoader />
-  if (error) return <p>Error: {error.message}</p>
+  if (error) return <ErrorScreen error={error} />
   return (
     <>
       {activeModal != null && (
@@ -73,18 +74,23 @@ function RouteComponent() {
       )}
 
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
-        <div className="divide-x ">
-          <Link to="/" className="action-link !ps-0">
-            Home
-          </Link>
-          <button
-            onClick={() => window.history.back()}
-            className="action-link px-1"
-          >
-            Back
-          </button>
+        <div className="flex justify-between">
+          <div className="divide-x ">
+            <Link to="/" className="action-link !ps-0">
+              Home
+            </Link>
+            <button
+              onClick={() => window.history.back()}
+              className="action-link px-1"
+            >
+              Back
+            </button>
+          </div>
+          {/* <button className="action-link">
+            Save
+          </button> */}
         </div>
-        <h2 className="text-2xl text-center mb-3 font-bold">Onhand Inventory</h2>
+        <h2 className="page-title">Onhand Inventory</h2>
 
         <ProductSearchBarWithFilters />
 
@@ -106,29 +112,26 @@ const ItemCard = ({ data, setActiveModal }) => {
   return (
     <div className="rounded border p-2 h-full flex flex-col">
       <img
-        src="/warehouse.jpg"
+        src={data.image || 'missing.jpg'}
         alt=""
         className="w-full aspect-square object-cover mb-2"
       />
 
-      {/* Vendor / Store */}
       <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
-        {data?.vendor || 'undefined'}
+        {data.supplier?.name || 'n/a'}
       </div>
 
-      {/* Product Name */}
-      <div className="text-lg leading-5 line-clamp-2 mb-3 flex-grow-1 flex-shrink-0">
-        {data?.name || 'undefined'}
+      <div className="text-lg leading-5 line-clamp-2 pb-0.5 flex-grow-1 flex-shrink-0">
+        {data?.name || 'n/a'}
       </div>
 
-      {/* SKU / ID */}
       <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-        {data?.sku || 'SKU-MISSING'}
+        {data?.external_sku || 'n/a'}
       </div>
 
       {/* Secondary ID */}
       <div className="text-xs text-gray-400 truncate">
-        {data?.internal_sku || 'DTH-MISSING'}
+        {data?.internal_sku || 'n/a'}
       </div>
 
       <div className="text-sm flex items-center justify-between gap-2">
@@ -141,7 +144,7 @@ const ItemCard = ({ data, setActiveModal }) => {
 
         <div className="text-nowrap font-medium truncate">
           <span className="font-semibold">Onhand:</span>{' '}
-          <span className="">{data?.stock}</span>
+          <span className="">{data?.stocks}</span>
         </div>
       </div>
     </div>
@@ -149,59 +152,84 @@ const ItemCard = ({ data, setActiveModal }) => {
 }
 
 const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: fetchSuppliers,
+  })
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold  mb-3 text-xl">Edit item</h3>
-        <div className="flex flex-col gap-1 ">
+        <div className="mb-3 flex justify-between items-center">
+          <h3 className="font-semibold text-xl">Edit item</h3>
+          <button className="action-button !text-red-500 ">Delete</button>
+        </div>
+
+        {/* MODAL'S CONTENT */}
+        <div className="flex flex-col space-y-1 max-h-[75lvh] overflow-auto p-2 border-y border-gray-400">
           <input type="hidden" name="id" value={data?.id} />
 
+          <label className="mb-0 text-xs italic">Display image</label>
           <input
             type="file"
             name="product_img"
             accept="image/*"
-            className=" file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white "
+            className="form-control"
           />
 
+          <label className="mb-0 text-xs italic">Item name</label>
           <textarea
             name="name"
-            placeholder="Name"
+            placeholder="Quantum Wrench 1200/12ft"
             defaultValue={data?.name}
             className="form-control"
           />
+
+          <label className="mb-0 text-xs italic">Supplier</label>
+          <select
+            name="supplier"
+            defaultValue={data.supplier}
+            className="form-control"
+          >
+            {suppliers.map((sup) => (
+              <option key={sup.id} value={sup.id}>
+                {sup.name}
+              </option>
+            ))}
+          </select>
+
+          <label className="mb-0 text-xs italic">Supplier's SKU</label>
           <input
-            name="vendor"
+            name="external_sku"
             type="text"
-            placeholder="Vendor"
-            defaultValue={data?.vendor}
+            placeholder="SKU-9M1LT8"
+            defaultValue={data?.external_sku}
             className="w-full border rounded p-2"
           />
-          <input
-            name="sku"
-            type="text"
-            placeholder="SKU"
-            defaultValue={data?.sku}
-            className="w-full border rounded p-2"
-          />
+
+          <label className="mb-0 text-xs italic">Internal SKU</label>
           <input
             name="internal_sku"
             type="text"
-            placeholder="Internal SKU"
+            placeholder="DTH000000001"
             defaultValue={data?.internal_sku}
             className="w-full border rounded p-2"
           />
+
+          <label className="mb-0 text-xs italic">Price</label>
           <input
             name="price"
-            type="text"
-            placeholder="Price"
+            type="number"
+            placeholder="$100.00"
             defaultValue={data?.price}
             className="w-full border rounded p-2"
           />
+
+          <label className="mb-0 text-xs italic">Available Stocks</label>
           <input
-            name="stock"
-            type="text"
-            placeholder="Stock"
-            defaultValue={data?.stock}
+            name="stocks"
+            type="number"
+            placeholder="100"
+            defaultValue={data?.stocks}
             className="w-full border rounded p-2"
           />
         </div>

@@ -1,4 +1,4 @@
-import { deleteOrderMutation, fetchOrders } from '@/api/api'
+import { removeOrderMutation, fetchOrders } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
 import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
@@ -76,7 +76,7 @@ const OrderSetCardRowView = ({ data: order }) => {
   const queryClient = useQueryClient()
 
   const { mutateAsync: deleteOrder } = useMutation({
-    mutationFn: deleteOrderMutation,
+    mutationFn: removeOrderMutation,
     onSuccess: () => queryClient.invalidateQueries(['orders']),
   })
 

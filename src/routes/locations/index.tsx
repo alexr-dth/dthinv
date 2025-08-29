@@ -1,114 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LucideMenu } from 'lucide-react'
+import { LucideGripVertical, LucideMenu } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import { ReactSortable } from 'react-sortablejs'
 import PageLoader from '@/components/PageLoader'
+import {
+  addLocationMutation,
+  editLocationMutation,
+  fetchLocations,
+  removeLocationMutation,
+} from '@/api/api'
+import ErrorScreen from '@/components/ErrorScreen'
+import toast from 'react-hot-toast'
+import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
 
 const depthColors = [
-  'bg-blue-400 text-blue-900', // Level 1
-  'bg-orange-300 text-orange-900', // Level 2
-  'bg-teal-300 text-teal-900', // Level 3
-  'bg-red-300 text-red-900', // Level 4
-  'bg-green-300 text-green-900', // Level 5
-  'bg-indigo-300 text-indigo-900', // Level 6
-  'bg-yellow-300 text-yellow-900', // Level 7
-  'bg-pink-300 text-pink-900', // Level 8
-  'bg-purple-300 text-purple-900', // Level 9
-  'bg-gray-300 text-gray-900', // Level 10
+  'bg-blue-300 text-blue-900', // Level 1
+  'bg-orange-200 text-orange-900', // Level 2
+  'bg-teal-200 text-teal-900', // Level 3
+  'bg-red-200 text-red-900', // Level 4
+  'bg-green-200 text-green-900', // Level 5
+  'bg-indigo-200 text-indigo-900', // Level 6
+  'bg-yellow-200 text-yellow-900', // Level 7
+  'bg-pink-200 text-pink-900', // Level 8
+  'bg-purple-200 text-purple-900', // Level 9
+  'bg-gray-200 text-gray-900', // Level 10
 ]
-
-const sampleLocations = [
-  {
-    id: '1',
-    name: 'Main Warehouse',
-    barcode: 'WH-001',
-    parentId: '',
-    description: 'Primary warehouse facility storing all inventory.',
-    notes: 'Access restricted to authorized staff only.',
-  },
-  {
-    id: '2',
-    name: 'Zone A',
-    barcode: 'WH-001-ZA',
-    parentId: '1',
-    description: 'Zone A for general merchandise and fast-moving items.',
-    notes: 'Ensure daily restocking checks.',
-  },
-  {
-    id: '3',
-    name: 'Zone B',
-    barcode: 'WH-001-ZB',
-    parentId: '1',
-    description: 'Zone B reserved for bulk storage and seasonal goods.',
-    notes: 'Temperature monitoring required.',
-  },
-  {
-    id: '4',
-    name: 'Aisle A1',
-    barcode: 'WH-001-ZA-A1',
-    parentId: '2',
-    description: 'Aisle A1 for packaged food items.',
-    notes: 'Check for expiry dates during audits.',
-  },
-  {
-    id: '5',
-    name: 'Aisle A2',
-    barcode: 'WH-001-ZA-A2',
-    parentId: '2',
-    description: 'Aisle A2 dedicated to cleaning supplies.',
-    notes: 'Ensure chemical safety protocols are followed.',
-  },
-  {
-    id: '6',
-    name: 'Rack A1-01',
-    barcode: 'WH-001-ZA-A1-R01',
-    parentId: '4',
-    description: 'Rack A1-01 for beverages.',
-    notes: 'Heavy load — confirm rack weight capacity weekly.',
-  },
-  {
-    id: '7',
-    name: 'Rack A1-02',
-    barcode: 'WH-001-ZA-A1-R02',
-    parentId: '4',
-    description: 'Rack A1-02 for snack foods.',
-    notes: 'Rotate stock to prevent expired products.',
-  },
-  {
-    id: '8',
-    name: 'Bin A1-01-01',
-    barcode: 'WH-001-ZA-A1-R01-B01',
-    parentId: '6',
-    description: 'Bin for bottled water storage.',
-    notes: 'High turnover — replenish twice a week.',
-  },
-  {
-    id: '9',
-    name: 'Bin A1-01-02',
-    barcode: 'WH-001-ZA-A1-R01-B02',
-    parentId: '6',
-    description: 'Bin for canned soda storage.',
-    notes: 'Keep away from direct sunlight.',
-  },
-]
-
-// emulate get api requests, change this later
-const fetchLocations = async () => {
-  return sampleLocations
-}
-// emulate post/patch/delete api requests, change this later
-const addLocationMutation = async (newLocation) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  sampleLocations.push(newLocation)
-}
-
-const editLocationMutation = async (newData) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  const targetIndex = sampleLocations.findIndex(({ id }) => id == newData?.id)
-  sampleLocations[targetIndex] = newData
-}
 
 // Helper
 const buildTree = (data, parentId = '') => {
@@ -119,6 +37,8 @@ const buildTree = (data, parentId = '') => {
       children: buildTree(data, item.id),
     }))
 }
+
+const sortOrder = (data) => data.sort((a, b) => a.order_weight - b.order_weight)
 
 // MAIN APP
 export const Route = createFileRoute('/locations/')({
@@ -135,22 +55,20 @@ function RouteComponent() {
 
   // React Query - for fetching data via api
   const {
-    data = [],
+    data: locations = [],
     isLoading,
     error,
     dataUpdatedAt,
   } = useQuery({
     queryKey: ['locations'],
     queryFn: fetchLocations,
+    select: (data) => sortOrder(buildTree(data)),
   })
 
-  const [list, setList] = useState(() => buildTree(data))
+  const [list, setList] = useState(locations)
 
   useEffect(() => {
-    setList(() => {
-      console.log(buildTree(data))
-      return buildTree(data)
-    })
+    setList(() => locations)
   }, [dataUpdatedAt])
 
   // React Query - for mutating/updating data via api
@@ -164,12 +82,15 @@ function RouteComponent() {
     onSuccess: () => queryClient.invalidateQueries(['locations']),
   })
 
-  // Helpers - structuring data to be json-tree shape
+  const { mutateAsync: deleteLocation } = useMutation({
+    mutationFn: removeLocationMutation,
+    onSuccess: () => queryClient.invalidateQueries(['locations']),
+  })
 
   // Functions
   const closeModal = () => setActiveModal(null)
 
-  const addLocation = async (e) => {
+  const handleAddLocation = async (e) => {
     e.preventDefault()
     const form = e.target
     const btn = form.querySelector("button[type='submit']")
@@ -177,14 +98,13 @@ function RouteComponent() {
 
     try {
       const newLocation = {
-        id: Date.now().toString(),
-        name: form.elements['name']?.value || '',
-        barcode: form.elements['barcode']?.value || '',
-        description: form.elements['description']?.value || '',
-        notes: form.elements['notes']?.value || '',
+        name: form.elements['name']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
+        description: form.elements['description']?.value,
+        notes: form.elements['notes']?.value,
         parentId: form.elements['parentId']?.value || '',
+        order_weight: Date.now(),
       }
-
       await createLocation(newLocation)
     } finally {
       closeModal()
@@ -192,33 +112,83 @@ function RouteComponent() {
     }
   }
 
-  const editLocation = async (e) => {
+  const handleEditLocation = async (e) => {
     e.preventDefault()
     const form = e.target
     const btn = form.querySelector("button[type='submit']")
     btn.disabled = true
-
     try {
       const newData = {
         id: form.elements['id']?.value,
         name: form.elements['name']?.value,
-        barcode: form.elements['barcode']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
         description: form.elements['description']?.value,
         notes: form.elements['notes']?.value,
         parentId: form.elements['parentId']?.value,
       }
-
-      console.log(newData)
-
       await patchLocation(newData)
     } finally {
       closeModal()
       btn.disabled = false
     }
   }
+
+  const handleOrderChange = async (evt, listed) => {
+    try {
+      const { oldIndex, newIndex } = evt
+      if (
+        oldIndex === undefined ||
+        newIndex === undefined ||
+        oldIndex === newIndex
+      )
+        return
+      const moved = listed[oldIndex]
+      const targetIndex = newIndex > oldIndex ? newIndex + 1 : newIndex
+
+      const before = listed[targetIndex - 1] ?? null
+      const after = listed[targetIndex] ?? null
+
+      if (!after) {
+        moved.order_weight = before.order_weight + 1
+      } else if (!before) {
+        moved.order_weight = after.order_weight - 1
+      } else {
+        let tempWeight
+
+        if (before.order_weight + 1 < after.order_weight) {
+          tempWeight = before.order_weight + 1
+        } else {
+          tempWeight = (before.order_weight + after.order_weight) / 2
+        }
+        moved.order_weight = tempWeight
+      }
+
+      moved.children = undefined
+      moved.chosen = undefined
+      moved.selected = undefined
+      await patchLocation(moved)
+    } catch (err) {
+      toast.error('Server error')
+    }
+  }
+
+  const handleRemoveLocation = async (e, id) => {
+    e.preventDefault()
+    const btn = e.target
+    btn.disabled = true
+    try {
+      await deleteLocation(id)
+    } finally {
+      closeModal()
+      btn.disabled = false
+    }
+  }
+
+  const [expandedAll, setExpandedAll] = useState(false)
   // UI/UX
   if (isLoading) return <PageLoader />
-  if (error) return <p>Error: {error.message}</p>
+  if (error) return <ErrorScreen error={error} />
+
   return (
     <>
       {activeModal != null && (
@@ -227,7 +197,7 @@ function RouteComponent() {
             {activeModal.name == 'addLocation' && (
               <AddLocationModal
                 cancelCallback={closeModal}
-                saveCallback={addLocation}
+                saveCallback={handleAddLocation}
               />
             )}
 
@@ -244,14 +214,14 @@ function RouteComponent() {
               <EditLocationModal
                 data={activeModal.data}
                 cancelCallback={closeModal}
-                saveCallback={editLocation}
+                saveCallback={handleEditLocation}
               />
             )}
             {activeModal.name == 'addChildLocation' && (
               <AddChildLocationModal
                 data={activeModal.data}
                 cancelCallback={closeModal}
-                saveCallback={addLocation}
+                saveCallback={handleAddLocation}
               />
             )}
           </div>
@@ -270,17 +240,30 @@ function RouteComponent() {
             Back
           </button>
         </div>
-        <h2 className="text-2xl text-center mb-3 font-bold">
-          Warehouse Locations
-        </h2>
-        <button
-          className="bg-gray-100 w-full p-2 text-center border rounded cursor-pointer"
-          onClick={() => setActiveModal({ name: 'addLocation' })}
-        >
-          Add location
-        </button>
+        <h2 className="page-title">Warehouse Locations</h2>
 
-        <button className="text-blue-500 mt-6 mb-2">Expand all</button>
+        <div
+          id="title-buttons"
+          className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2"
+        >
+          <button
+            className="action-link"
+            onClick={() => setActiveModal({ name: 'addLocation' })}
+          >
+            Add Location
+          </button>
+
+          <button className="action-link" onClick={() => setExpandedAll(true)}>
+            Expand
+          </button>
+
+          <button className="action-link" onClick={() => setExpandedAll(false)}>
+            Collapse
+          </button>
+        </div>
+
+        {/* TODO: Change this component to something that will make sense in this context */}
+        <ProductSearchBarWithFilters />
 
         <ReactSortable
           className="space-y-3"
@@ -288,12 +271,17 @@ function RouteComponent() {
           setList={setList}
           animation={200}
           tag="ul"
+          onEnd={(evt) => handleOrderChange(evt, list)}
         >
           {list.map((node) => (
             <TreeNode
               key={node.id}
               node={node}
               setActiveModal={setActiveModal}
+              handleOrderChange={handleOrderChange}
+              handleRemoveLocation={handleRemoveLocation}
+              expandedToggle={expandedAll}
+              className={node.children < 1 && 'mb-0.5'}
             />
           ))}
         </ReactSortable>
@@ -303,16 +291,29 @@ function RouteComponent() {
 }
 
 // ADDITIONAL COMPONENTS
-const TreeNode = ({ node, depth = 0, setActiveModal }) => {
-  const [expanded, setExpanded] = useState(false)
+const TreeNode = ({
+  node,
+  depth = 0,
+  setActiveModal,
+  handleOrderChange,
+  handleRemoveLocation,
+  expandedToggle,
+  className,
+}) => {
+  const [expanded, setExpanded] = useState(expandedToggle)
   const [optionExpanded, setOptionExpanded] = useState(false)
   const [list, setList] = useState(node.children)
   useEffect(() => {
     setList(node.children)
   }, [node])
+
+  useEffect(() => {
+    setExpanded(expandedToggle)
+  }, [expandedToggle])
+
   return (
     <li
-      className={`space-y-0.5 cursor-pointer`}
+      className={`space-y-0.5 cursor-move ` + className}
       onClick={(e) => {
         e.stopPropagation()
         setExpanded(!expanded)
@@ -321,8 +322,11 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
       <div
         className={`${depthColors[depth]} w-full border-2 p-2 rounded flex gap-2 border-gray-700 items-center`}
       >
+        <LucideGripVertical size={16} />
         <strong className="truncate">{node.name}</strong>
-        <span className="text-black/80 text-xs truncate">({node.barcode})</span>
+        <span className="text-black/80 text-xs truncate">
+          ({node.barcode_qr})
+        </span>
         {!expanded && node.children?.length > 0 && (
           <span className="font-bold text-xs">
             +{node.children?.length} more locations
@@ -333,7 +337,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
         <div className="ms-auto relative">
           <LucideMenu
             size={32}
-            className=" p-1.5 ursor-pointer text-black"
+            className=" p-1.5 cursor-pointer text-black"
             onClick={(e) => {
               e.stopPropagation()
               setOptionExpanded(!optionExpanded)
@@ -343,7 +347,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
             <div className="absolute border bg-white shadow p-1 rounded right-full top-0">
               <div className="flex flex-col divide-y divide-gray-400">
                 <Link
-                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -355,7 +359,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                 </Link>
 
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -365,7 +369,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Image
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -375,7 +379,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Barcode
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -385,7 +389,7 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   Edit
                 </button>
                 <button
-                  className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer"
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setOptionExpanded(false)
@@ -393,6 +397,17 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
                   }}
                 >
                   Add section
+                </button>
+
+                <button
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-red-500 text-nowrap cursor-pointer"
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    await handleRemoveLocation(e, node?.id || null)
+                    setOptionExpanded(false)
+                  }}
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -402,18 +417,21 @@ const TreeNode = ({ node, depth = 0, setActiveModal }) => {
 
       {expanded && node.children?.length > 0 && (
         <ReactSortable
-          className="ms-3 space-y-1"
+          className="ms-3 space-y-2"
           list={list}
           setList={setList}
           animation={200}
           tag="ul"
+          onEnd={(evt) => handleOrderChange(evt, list)}
         >
-          {list.map((child) => (
+          {sortOrder(list).map((child) => (
             <TreeNode
               key={child.id}
               node={child}
               depth={depth + 1}
               setActiveModal={setActiveModal}
+              expandedToggle={expandedToggle}
+              className={child.children.length < 1 && 'mb-0.5'}
             />
           ))}
         </ReactSortable>
@@ -445,8 +463,8 @@ const BarcodeModal = ({ data, cancelCallback }) => {
   const barcodeRef = useRef(null)
 
   useEffect(() => {
-    if (data?.barcode && barcodeRef.current) {
-      JsBarcode(barcodeRef.current, data.barcode, {
+    if (data?.barcode_qr && barcodeRef.current) {
+      JsBarcode(barcodeRef.current, data.barcode_qr, {
         format: 'CODE128',
         lineColor: '#000',
         width: 2,
@@ -454,7 +472,7 @@ const BarcodeModal = ({ data, cancelCallback }) => {
         displayValue: true,
       })
     }
-  }, [data?.barcode])
+  }, [data?.barcode_qr])
 
   return (
     <div className="bg-white rounded p-3 mx-3">
@@ -476,7 +494,7 @@ const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
         <h3 className="font-semibold mb-3 text-xl">
           Edit location information
         </h3>
-        <input type="hidden" name="id" value={data?.id || ''} />
+        <input type="hidden" name="id" value={data?.id} />
         <input type="hidden" name="parentId" value={data?.parentId || ''} />
 
         <div className="flex flex-col gap-1">
@@ -486,6 +504,16 @@ const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
             placeholder="Location name"
             className="w-full border rounded p-2"
             defaultValue={data?.name || ''}
+            required
+          />
+
+          <input
+            type="text"
+            name="barcode_qr"
+            placeholder="QR Code"
+            className="w-full border rounded p-2"
+            defaultValue={data?.barcode_qr || ''}
+            required
           />
 
           <textarea
@@ -528,15 +556,14 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
         <h3 className="font-semibold mb-3 text-xl">Add additional location</h3>
-
-        <input type="hidden" name="parentId" value={data?.id} />
-
         <div className="flex flex-col gap-1">
+          <input type="hidden" name="parentId" value={data?.id} />
+
           <input
             name="parent_code"
             type="text"
             className="w-full border rounded p-2 disabled:bg-gray-200 text-gray-500"
-            value={data?.barcode + ' - parent'}
+            value={data?.name + ' - under'}
             disabled
           />
 
@@ -545,6 +572,15 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
             type="text"
             placeholder="Location name"
             className="w-full border rounded p-2"
+            required
+          />
+
+          <input
+            name="barcode_qr"
+            type="text"
+            placeholder="QR Code"
+            className="w-full border rounded p-2"
+            required
           />
 
           <textarea
@@ -586,11 +622,22 @@ const AddLocationModal = ({ saveCallback, cancelCallback }) => {
       <form onSubmit={saveCallback} method="post">
         <h3 className="font-semibold  mb-3 text-xl">Add location</h3>
         <div className="flex flex-col gap-1 ">
+          <input type="hidden" name="parentId" value={''} />
+
           <input
             name="name"
             type="text"
             placeholder="Location name"
             className="w-full border rounded p-2"
+            required
+          />
+
+          <input
+            name="barcode_qr"
+            type="text"
+            placeholder="QR Code"
+            className="w-full border rounded p-2"
+            required
           />
 
           <textarea
