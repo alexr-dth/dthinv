@@ -24,7 +24,7 @@ export default function ProductSearchBarWithFilters() {
       </div>
       {expanded && (
         <div className=" space-y-1 px-3">
-          <span className="text-xs">*Filter by supplier</span>
+          <span className="text-xs">Filter by supplier</span>
           <select
             name="supplier_filter"
             className="form-control read-only:!bg-white w-full text"

@@ -24,7 +24,7 @@ function App() {
       </div>
       <h2 className="text-2xl text-center mb-3 font-bold">DTH Inventory App</h2>
 
-      <div className="flex flex-col gap-2 items-center">
+      <div className="flex flex-col gap-2 items-center pb-5">
         {activeMenu === 'main' && (
           <>
             <Link to="/" className="btn w-full disabled" disabled>
@@ -59,7 +59,7 @@ function App() {
         {activeMenu === 'inventory' && (
           <>
             <button
-              className="btn w-full"
+              className="action-link underline"
               onClick={() => setActiveMenu('main')}
             >
               Back

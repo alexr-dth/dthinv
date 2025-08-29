@@ -125,7 +125,7 @@ const ItemCard = ({ data, setActiveModal }) => {
 const ItemRowCard = ({ data, setActiveModal }) => {
   return (
     <div className="rounded border p-2 h-full flex gap-2">
-      <img src="/warehouse.jpg" alt="" className="max-w-1/4 object-contain" />
+      <img src="/warehouse.jpg" alt="" className="w-1/4 object-contain" />
 
       <div className="w-3/4 flex flex-col">
         <div className="text-xs text-gray-600 font-semibold truncate">

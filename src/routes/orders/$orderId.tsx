@@ -1,4 +1,5 @@
 import { fetchOrderById } from '@/api/api'
+import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -7,7 +8,7 @@ import {
   useNavigate,
   useParams,
 } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/orders/$orderId')({
@@ -20,72 +21,110 @@ function RouteComponent() {
   const navigate = useNavigate()
 
   const {
-    data = {},
+    data: order = {},
     isLoading,
     error,
+    dataUpdatedAt,
   } = useQuery({
     queryKey: ['orders', String(orderId)],
     queryFn: () => fetchOrderById(orderId),
   })
 
+  const buildOrderSet = ({ items = [] }) => {
+    return Object.values(
+      items.reduce((acc, { supplier, ...rest }) => {
+        ;(acc[supplier.id] ??= { supplier, items: [] }).items.push(rest)
+        return acc
+      }, {}),
+    )
+  }
+
+  const orderSets = useMemo(() => buildOrderSet(order), [order, dataUpdatedAt])
+
   useEffect(() => {
     if (isLoading) return
-    if (Object.keys(data).length) return
+    if (Object.keys(order).length) return
 
     toast.error('Order not found')
     navigate({ to: '/orders' })
-  }, [isLoading, data, navigate])
+  }, [isLoading, order, navigate])
+
+  const totalPrice = (items = []) =>
+    items.reduce(
+      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
+      0,
+    )
+
+  const totalUnits = (items = []) =>
+    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
 
   if (isLoading) return <PageLoader />
-  if (error) return <p>Something went wrong</p>
+  if (error) return <ErrorScreen error={error} />
   return (
     <>
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
-        <div className="divide-x ">
-          <Link to="/" className="action-link !ps-0">
-            Home
+        <div className="flex justify-between">
+          <div className="divide-x ">
+            <Link to="/" className="action-link !ps-0">
+              Home
+            </Link>
+            <button
+              onClick={() => window.history.back()}
+              className="action-link px-1"
+            >
+              Back
+            </button>
+          </div>
+          <Link to="/" className="action-link">
+            Update
           </Link>
-          <button
-            onClick={() => window.history.back()}
-            className="action-link px-1"
-          >
-            Back
-          </button>
         </div>
-        <h2 className="text-2xl text-center mb-3 font-bold">Order Details</h2>
+
+        <h2 className="page-title">Order Details</h2>
 
         <div className="space-y-2">
           <div>
             <span className="font-bold text-sm">Order Name:</span> <br />
-            <span> {data.order_name}</span>
+            <span>{order.name || 'n/a'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Supplier Order Number:</span>{' '}
             <br />
-            <span>#{data.supplier_tracking_number}</span>
+            <span>
+              #{order.external_tracking_number || 'EXT-TRKNO-MISSING'}
+            </span>
+          </div>
+
+          <div>
+            <span className="font-bold text-sm">Requester:</span> <br />
+            <span>{order.requester?.name || 'n/a'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Notes:</span> <br />
-            <span>{data.notes || 'N/A'}</span>
+            <span>{order.requester_notes || 'n/a'}</span>
           </div>
 
           <hr />
 
           <div>
             <span className="font-bold text-sm">Approver:</span> <br />
-            <span>{data.approver || 'N/A'}</span>
+            <span>{order.approver?.name || 'n/a'}</span>
           </div>
 
           <div>
-            <span className="font-bold text-sm">Approval Notes:</span> <br />
-            <span>{data.approval_notes || 'N/A'}</span>
+            <span className="font-bold text-sm">Notes:</span> <br />
+            <span>{order.approval_notes || 'n/a'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
-            <span className="uppercase">{data.status?.replace('-', ' ')}</span>
+            <span
+              className={`status-${order.status} font-bold rounded-full px-4 truncate flex-shrink-1 uppercase`}
+            >
+              {order.status?.replace('-', ' ')}
+            </span>
           </div>
         </div>
 
@@ -102,16 +141,20 @@ function RouteComponent() {
         </button>
 
         <div className="space-y-2">
-          <OrderSet />
-          <OrderSet />
-          <OrderSet />
-          <OrderSet />
+          {orderSets.map((set) => (
+            <OrderSet set={set} />
+          ))}
         </div>
 
         <div className="border-t-8 text-end mt-5 pt-2 mb-10">
-          <div className="bg-gray-200 p-2 rounded shadow flex items-center justify-end gap-1">
-            <span className="text-sm">All Total (10 Items):</span>
-            <span className="font-bold text-xl">$123.00</span>
+          <div className="bg-blue-100 p-2 rounded shadow flex items-center justify-end gap-1">
+            <div className="text-end text-sm py-2 ">
+              Total ({order.items.length || 0} types/{totalUnits(order.items)}{' '}
+              units):{' '}
+              <span className="font-bold text-xl">
+                ${totalPrice(order.items).toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -178,27 +221,39 @@ function RouteComponent() {
   )
 }
 
-const ItemNode = ({ data }) => {
+const OrderSetItems = ({ data: item }) => {
   const [expanded, setExpanded] = useState(false)
-
   return (
-    <li className="pt-2  min-h-30 ">
+    <li className="pt-2 min-h-30 ">
       <div className="flex items-stretch gap-2 mb-2">
         <img
-          src="/warehouse.jpg"
+          src={item?.image || '/missing.jpg'}
           alt=""
-          className="aspect-square max-w-20 object-contain"
+          className="w-1/4 object-contain"
         />
-        <div className="flex flex-col flex-1 ">
-          <div className="flex-grow-1">SKU: 202092675</div>
-          <div className="flex-grow-1">$5.98</div>
-
-          <div className="mt-auto flex justify-between items-center text-xs">
-            <span className="font-bold">Requested Qty: 26</span>
+        <div className="w-3/4 flex flex-col">
+          <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
+            {item?.name}
           </div>
-          <div className="mt-auto flex justify-between items-center text-xs">
-            <span className="font-bold">Approved Qty: 26</span>
-            <span className="font-bold">$5.98</span>
+
+          <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
+            {item.external_sku}
+          </div>
+
+          <div className="text-sm mb-2">${item.price}</div>
+
+          <div className="flex justify-between gap-3">
+            <div>
+              <div className="text-xs flex-grow-0 truncate mb-0 text-gray-500">
+                Requested Qty: {item.requested_qty}
+              </div>
+              <div className="text-xs flex-grow-0 truncate font-semibold">
+                Approved Qty: {item.approved_qty}
+              </div>
+            </div>
+            <div className="font-bold truncate">
+              ${(item.approved_qty * item.price).toFixed(2)}
+            </div>
           </div>
         </div>
       </div>
@@ -215,7 +270,7 @@ const ItemNode = ({ data }) => {
             1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
           </div>
           <div>
-            <span className="font-bold">Notes: </span> N/A
+            <span className="font-bold">Notes: </span> n/a
           </div>
         </div>
       )}
@@ -223,8 +278,17 @@ const ItemNode = ({ data }) => {
   )
 }
 
-const OrderSet = () => {
+const OrderSet = ({ set }) => {
   const [expanded, setExpanded] = useState(false)
+  const totalPrice = (items = []) =>
+    items.reduce(
+      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
+      0,
+    )
+
+  const totalUnits = (items = []) =>
+    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+
   return (
     <div>
       <div className="border rounded">
@@ -232,20 +296,35 @@ const OrderSet = () => {
           className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
           onClick={() => setExpanded(!expanded)}
         >
-          <span className="text-lg font-semibold uppercase">
-            {'Home Depot'}
-          </span>
-          <span className="text-xs">(13 items)</span>
+          <div>
+            <h5 className="text-lg font-semibold uppercase">
+              {set.supplier?.name || 'n/a'}
+            </h5>
+            {!expanded && (
+              <span className="text-sm text-gray-500">
+                ${totalPrice(set.items).toFixed(2)}{' '}
+                <span className="text-xs">
+                  ({set.items.length || 0} types/{totalUnits(set.items)} units)
+                </span>
+              </span>
+            )}
+          </div>
+
           <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
         </h3>
 
         {expanded && (
           <ul className="space-y-2 divide-y divide-gray-400 px-2 pb-2">
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
-            <ItemNode data={{}} />
+            {set.items.map((item) => (
+              <OrderSetItems data={item} />
+            ))}
+
             <li className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
-              Total (10 Items): <span className="font-bold">$123.00</span>
+              Total ({set.items.length || 0} types/{totalUnits(set.items)}{' '}
+              units):
+              <span className="font-bold">
+                ${totalPrice(set.items).toFixed(2)}
+              </span>
             </li>
           </ul>
         )}

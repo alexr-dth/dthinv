@@ -1,42 +1,55 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 body {
   @apply m-0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 .btn {
-  @apply bg-gray-100 p-2 text-center border rounded cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed
+  @apply p-2 text-center border rounded cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn.disabled {
-  @apply !bg-gray-200 !opacity-50 !cursor-not-allowed
+  @apply !bg-gray-200 !opacity-50 !cursor-not-allowed;
 }
 
 .btn.btn-blue {
-  @apply !bg-blue-500 hover:!bg-blue-600 text-white 
+  @apply !bg-blue-500 hover:!bg-blue-600 text-white;
 }
 
-.form-control {
-  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed
+input[type='text'].form-control,
+input[type='search'].form-control,
+input[type='number'].form-control,
+select.form-control,
+textarea.form-control {
+  @apply border rounded p-2;
 }
 
+input[type='text'].form-control,
+input[type='search'].form-control,
+input[type='number'].form-control {
+  @apply read-only:bg-gray-200 read-only:cursor-not-allowed;
+}
+
+input[type='file'].form-control {
+  @apply border rounded p-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
+}
 
 .action-link {
-  @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed
+  @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed disabled:line-through aria-selected:text-blue-200 ;
 }
 
 .action-link.disabled {
-  @apply !text-gray-300 !cursor-not-allowed
+  @apply !text-gray-300 !cursor-not-allowed line-through;
 }
 
 .status-approved {
@@ -53,4 +66,8 @@ code {
 
 .status-undefined {
   @apply bg-gray-200 text-gray-900;
+}
+
+.page-title {
+  @apply text-2xl text-center mb-3 font-bold;
 }
