@@ -8,7 +8,10 @@ import * as TanStackQueryProvider from './integrations/tanstack-query/root-provi
 import { routeTree } from './routeTree.gen'
 
 import './styles.css'
+import i18n from './i18n'
+
 import reportWebVitals from './reportWebVitals.ts'
+import { I18nextProvider } from 'react-i18next'
 
 // Create a new router instance
 
@@ -37,9 +40,12 @@ if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
-        <RouterProvider router={router} />
-      </TanStackQueryProvider.Provider>
+      <I18nextProvider i18n={i18n}>
+        <TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
+          <RouterProvider router={router} />
+        </TanStackQueryProvider.Provider>
+      </I18nextProvider>
+      ,
     </StrictMode>,
   )
 }

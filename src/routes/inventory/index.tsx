@@ -1,19 +1,21 @@
+import { useTranslation } from 'react-i18next'
 import { fetchItems, fetchSuppliers } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideListFilter } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import ItemCard from '@/components/Cards/ItemCard'
 
 export const Route = createFileRoute('/inventory/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
+  const { t } = useTranslation()
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
@@ -77,29 +79,49 @@ function RouteComponent() {
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
-              Home
+              {t('Home')}
             </Link>
             <button
               onClick={() => window.history.back()}
               className="action-link px-1"
             >
-              Back
+              {t('Back')}
             </button>
           </div>
           {/* <button className="action-link">
             Save
           </button> */}
         </div>
-        <h2 className="page-title">Onhand Inventory</h2>
+        <h2 className="page-title">Onhand Items</h2>
 
-        <ProductSearchBarWithFilters />
+        <div
+          id="title-buttons"
+          className="divide-x text-nowrap overflow-auto pb-1"
+        >
+          <Link className="action-link" to="/request">
+            {t('Request item')}
+          </Link>
+        </div>
+
+        <ItemSearchBarWithFilters />
 
         <div className="grid grid-cols-2 gap-3 ">
           {data?.map((item) => (
             <ItemCard
               key={item.id}
               data={item}
-              setActiveModal={setActiveModal}
+              actions={({ data }) => (
+                <div className="flex justify-end">
+                  <button
+                    className="action-link text-end text-sm"
+                    onClick={() =>
+                      setActiveModal({ name: 'editItem', data: data })
+                    }
+                  >
+                    {t('Update')}
+                  </button>
+                </div>
+              )}
             />
           ))}
         </div>
@@ -108,50 +130,9 @@ function RouteComponent() {
   )
 }
 
-const ItemCard = ({ data, setActiveModal }) => {
-  return (
-    <div className="rounded border p-2 h-full flex flex-col">
-      <img
-        src={data.image || 'missing.jpg'}
-        alt=""
-        className="w-full aspect-square object-cover mb-2"
-      />
-
-      <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
-        {data.supplier?.name || 'n/a'}
-      </div>
-
-      <div className="text-lg leading-5 line-clamp-2 pb-0.5 flex-grow-1 flex-shrink-0">
-        {data?.name || 'n/a'}
-      </div>
-
-      <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-        {data?.external_sku || 'n/a'}
-      </div>
-
-      {/* Secondary ID */}
-      <div className="text-xs text-gray-400 truncate">
-        {data?.internal_sku || 'n/a'}
-      </div>
-
-      <div className="text-sm flex items-center justify-between gap-2">
-        <button
-          className="text-blue-500 underline"
-          onClick={() => setActiveModal({ name: 'editItem', data: data })}
-        >
-          Update
-        </button>
-
-        <div className="text-nowrap font-medium truncate">
-          <span className="font-semibold">Onhand:</span>{' '}
-          <span className="">{data?.stocks}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
+  // USED IN INVENTORY AND ITEMS/PRODUCTS INDEX
+  const { t } = useTranslation()
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: fetchSuppliers,
@@ -160,8 +141,13 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
         <div className="mb-3 flex justify-between items-center">
-          <h3 className="font-semibold text-xl">Edit item</h3>
-          <button className="action-button !text-red-500 ">Delete</button>
+          <h3 className="font-semibold text-xl">Edit item details</h3>
+          <button
+            className="action-link not-disabled:!text-red-500 !px-0"
+            disabled
+          >
+            Delete
+          </button>
         </div>
 
         {/* MODAL'S CONTENT */}
@@ -180,14 +166,14 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
           <textarea
             name="name"
             placeholder="Quantum Wrench 1200/12ft"
-            defaultValue={data?.name}
+            defaultValue={data?.short_name}
             className="form-control"
           />
 
           <label className="mb-0 text-xs italic">Supplier</label>
           <select
             name="supplier"
-            defaultValue={data.supplier}
+            defaultValue={data.supplier || 'Home Depot'}
             className="form-control"
           >
             {suppliers.map((sup) => (
@@ -202,7 +188,7 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
             name="external_sku"
             type="text"
             placeholder="SKU-9M1LT8"
-            defaultValue={data?.external_sku}
+            defaultValue={data?.sku_number}
             className="w-full border rounded p-2"
           />
 
@@ -211,7 +197,7 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
             name="internal_sku"
             type="text"
             placeholder="DTH000000001"
-            defaultValue={data?.internal_sku}
+            defaultValue={data?.internet_sku_number}
             className="w-full border rounded p-2"
           />
 
@@ -220,16 +206,16 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
             name="price"
             type="number"
             placeholder="$100.00"
-            defaultValue={data?.price}
+            defaultValue={data?.item_price}
             className="w-full border rounded p-2"
           />
 
-          <label className="mb-0 text-xs italic">Available Stocks</label>
+          <label className="mb-0 text-xs italic">Onhand</label>
           <input
             name="stocks"
             type="number"
             placeholder="100"
-            defaultValue={data?.stocks}
+            defaultValue={data?.inventory}
             className="w-full border rounded p-2"
           />
         </div>
@@ -240,13 +226,13 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
             onClick={cancelCallback}
             type="button"
           >
-            Close
+            {t('Close')}
           </button>
           <button
             className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
             type="submit"
           >
-            Save
+            {t('Save')}
           </button>
         </div>
       </form>

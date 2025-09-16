@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { LucideListFilter } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 
 import {
   addItemMutation,
@@ -13,8 +13,10 @@ import {
   removeItemMutation,
 } from '@/api/api'
 import BasicLoader from '@/components/BasicLoader'
-import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
+import ItemCard from '@/components/Cards/ItemCard'
+import ErrorScreen from '@/components/ErrorScreen'
 
 // MAIN APP
 export const Route = createFileRoute('/items/')({
@@ -22,8 +24,10 @@ export const Route = createFileRoute('/items/')({
 })
 
 function RouteComponent() {
-  const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
+  const [mode, setMode] = useState('items')
+  const [filteredData, setFilteredData] = useState([])
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
@@ -39,85 +43,21 @@ function RouteComponent() {
     queryFn: fetchItems,
   })
 
+  // FOR PREFETCHING TO AVOID DOWNTIME
   useQuery({
     queryKey: ['suppliers'],
     queryFn: fetchSuppliers,
   })
 
-  // React Query - for mutating/updating data via api
-  const { mutateAsync: createItem } = useMutation({
-    mutationFn: addItemMutation,
-    onSuccess: () => queryClient.invalidateQueries(['items']),
-  })
-
-  const { mutateAsync: patchItem } = useMutation({
-    mutationFn: editItemMutation,
-    onSuccess: () => queryClient.invalidateQueries(['items']),
-  })
-
-  const { mutateAsync: deleteItem } = useMutation({
-    mutationFn: removeItemMutation,
-    onSuccess: () => queryClient.invalidateQueries(['items']),
-  })
-
   const closeModal = () => setActiveModal(null)
 
-  const handleAddItem = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector('button[type="submit"]')
-    btn.disabled = true
-
-    try {
-      const newItem = {
-        supplier: {
-          id: form.elements['supplier_id']?.value,
-          name: form.elements['supplier_name']?.value,
-        },
-        name: form.elements['name']?.value,
-        external_sku: form.elements['external_sku']?.value,
-        internal_sku: form.elements['internal_sku']?.value,
-        price: parseFloat(form.elements['price']?.value),
-        stocks: parseInt(form.elements['stocks']?.value),
-        image: form.elements['image']?.value,
-      }
-
-      await createItem(newItem)
-    } finally {
-      toast.success('Added item')
-      closeModal()
-      btn.disabled = false
-    }
-  }
-
-  const handleEditItem = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector('button[type="submit"]')
-    btn.disabled = true
-
-    try {
-      const newData = {
-        id: form.elements['id']?.value,
-        image: form.elements['image']?.value,
-        vendor: form.elements['vendor']?.value,
-        name: form.elements['name']?.value,
-        sku: form.elements['sku']?.value,
-        internal_sku: form.elements['internal_sku']?.value,
-        price: form.elements['price']?.value,
-        stock: form.elements['stock']?.value,
-      }
-
-      await patchItem(newData)
-    } finally {
-      closeModal()
-      toast.success('Update success')
-      btn.disabled = false
-    }
-  }
+  // DISABLE SCROLLING
+  useEffect(() => {
+    document.body.style.overflow = activeModal?.name ? 'hidden' : 'auto'
+  }, [activeModal])
 
   if (isLoading) return <PageLoader />
-  if (error) return <p>Error: {error.message}</p>
+  if (error) return <ErrorScreen error={error} />
   return (
     <>
       {/* START MODAL */}
@@ -125,18 +65,11 @@ function RouteComponent() {
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
           <div className="w-dvw max-w-lg">
             {activeModal.name == 'addItem' && (
-              <AddItemModal
-                cancelCallback={closeModal}
-                saveCallback={handleAddItem}
-              />
+              <AddItemModal closeModal={closeModal} />
             )}
 
             {activeModal.name == 'editItem' && (
-              <EditItemModal
-                data={activeModal.data}
-                cancelCallback={closeModal}
-                saveCallback={handleEditItem}
-              />
+              <EditItemModal data={activeModal.data} closeModal={closeModal} />
             )}
           </div>
         </div>
@@ -147,13 +80,13 @@ function RouteComponent() {
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
-              Home
+              {t('Home')}
             </Link>
             <button
               onClick={() => window.history.back()}
               className="action-link px-1"
             >
-              Back
+              {t('Back')}
             </button>
           </div>
 
@@ -162,103 +95,67 @@ function RouteComponent() {
           </button> */}
         </div>
 
-        <h2 className="page-title">Item Catalogue</h2>
+        <h2 className="page-title">{t('Item Catalogue')}</h2>
 
         {/* BELOW-TITLE OPTIONS */}
         <div
           id="title-buttons"
-          className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2"
+          className="divide-x text-nowrap overflow-auto pb-1"
         >
           <button
             className="action-link"
             onClick={() => setActiveModal({ name: 'addItem' })}
           >
-            Add item
+            {t('Add item')}
           </button>
           <Link className="action-link" to="/suppliers/add">
-            Add supplier
+            {t('Add supplier')}
           </Link>
-          <button className="action-link" disabled>
-            Bulk Update (Items)
-          </button>
-          <button className="action-link" disabled>
-            Bulk Update (UPC)
-          </button>
         </div>
 
-        <ProductSearchBarWithFilters />
+        <ItemSearchBarWithFilters
+          originalData={items}
+          setFilteredData={setFilteredData}
+        />
 
-        <div className="grid grid-cols-2 gap-3 ">
-          {items?.map((item) => (
-            <ProductGridCard
-              key={item.id}
-              data={item}
-              setActiveModal={setActiveModal}
-            />
-          ))}
-        </div>
+        {mode === 'items' && (
+          <div className="grid grid-cols-2 gap-2">
+            {filteredData.map((item) => (
+              <ItemCard
+                key={item.id}
+                data={item}
+                actions={({ data }) => (
+                  <div className="flex justify-end">
+                    <button
+                      className="action-link text-end text-sm"
+                      onClick={() =>
+                        setActiveModal({ name: 'editItem', data: data })
+                      }
+                    >
+                      {t('Update')}
+                    </button>
+                  </div>
+                )}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* <button className="action-link block mx-auto text-sm font-bold py-4">
+          Load More...
+        </button> */}
       </div>
     </>
   )
 }
 
-const ProductGridCard = ({ data, setActiveModal }) => {
-  return (
-    <div className="rounded border p-2 h-full">
-      {/* CONTENT */}
-      <div className="flex flex-col">
-        <img
-          src={data?.image || 'missing.png'}
-          alt=""
-          className="w-full aspect-square object-cover mb-2"
-        />
-
-        <div className="text-xs text-gray-600 font-semibold mb-1 truncate">
-          {data.supplier?.name || 'n/a'}
-        </div>
-
-        <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
-          {data.name || 'n/a'}
-        </div>
-
-        <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-          {data.external_sku || 'n/a'}
-        </div>
-
-        <div className="text-xs text-gray-400 truncate">
-          {data?.internal_sku || 'n/a'}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2/5 me-auto text-nowrap font-medium text-sm truncate">
-            <span className="font-semibold">Stk:</span>{' '}
-            <span className="">{data.stocks || 0}</span>
-          </div>
-
-          <div className="w-3/5 text-2xl font-bold text-gray-800 truncate text-end">
-            ${parseFloat(data.price).toFixed(2) || 'n/a'}
-          </div>
-        </div>
-      </div>
-
-      {/* ACTIONS */}
-      <div className="flex justify-end">
-        <button
-          className="action-link text-end text-sm"
-          onClick={() => setActiveModal({ name: 'editItem', data: data })}
-        >
-          Update
-        </button>
-      </div>
-    </div>
-  )
-}
-
-const AddItemModal = ({ saveCallback, cancelCallback }) => {
-  const [selectedSupplier, setSelectedSupplier] = useState(null)
-  const [newSupplierModal, openSupplierModal] = useState(false)
+const AddItemModal = ({ closeModal }) => {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
-  // React Query - for fetching data via api
+  const [selectedSupplier, setSelectedSupplier] = useState(false)
+  const [newSupplierModal, openSupplierModal] = useState(false)
+
   const {
     data: suppliers = [],
     isLoading: suppliersLoading,
@@ -268,9 +165,39 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
     queryFn: fetchSuppliers,
   })
 
+  const { mutateAsync: createItem } = useMutation({
+    mutationFn: addItemMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
+  })
+
+  const handleAddItem = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = form.querySelector('button[type="submit"]')
+    btn.disabled = true
+    try {
+      await createItem({
+        supplier_id: form.elements['supplier_id']?.value,
+        short_name: form.elements['name']?.value,
+        sku_number: form.elements['external_sku']?.value,
+        internet_sku_number: form.elements['internal_sku']?.value,
+        item_desc: form.elements['desc']?.value,
+        item_price: parseFloat(form.elements['price']?.value),
+        item_image: form.elements['image']?.value,
+      })
+      closeModal()
+      toast.success('Added item')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
   const { mutateAsync: createSupplier } = useMutation({
     mutationFn: addSupplierMutation,
-    onSuccess: () => queryClient.invalidateQueries(['suppliers']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
   })
 
   const handleAddSupplier = async (e) => {
@@ -280,14 +207,16 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
     btn.disabled = true
 
     try {
-      const supplierName = form.elements['name']?.value
-      const supplierQr = form.elements['barcode_qr']?.value
-      const newSupplier = { name: supplierName, barcode_qr: supplierQr }
-
-      await createSupplier(newSupplier)
-    } finally {
-      toast.success('Added supplier')
+      await createSupplier({
+        name: form.elements['name']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
+      })
       openSupplierModal(false)
+      toast.success('Added supplier')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
       btn.disabled = false
     }
   }
@@ -325,10 +254,10 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
                     type="button"
                     onClick={() => openSupplierModal(false)}
                   >
-                    Cancel
+                    {t('Cancel')}
                   </button>
                   <button className="btn flex-1" type="submit">
-                    Save
+                    {t('Save')}
                   </button>
                 </div>
               </form>
@@ -339,6 +268,7 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
 
       <div className="bg-white rounded p-3 mx-3">
         {!selectedSupplier ? (
+          // choose supplier
           <>
             <h3 className="font-semibold  mb-3 text-xl">Choose a supplier:</h3>
 
@@ -356,12 +286,8 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
             </div>
 
             <div className="flex gap-2">
-              <button
-                className="btn flex-1"
-                onClick={cancelCallback}
-                type="button"
-              >
-                Close
+              <button className="btn flex-1" onClick={closeModal} type="button">
+                {t('Close')}
               </button>
 
               <button
@@ -369,33 +295,36 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
                 type="button"
                 onClick={() => openSupplierModal(true)}
               >
-                New supplier
+                {t('New supplier')}
               </button>
             </div>
           </>
         ) : (
+          // fill out item info
           <>
-            <h3 className="font-semibold mb-3 text-xl">Add item</h3>
-            <form onSubmit={saveCallback} method="post">
+            <h3 className="font-semibold mb-3 text-xl">{t('Add item')}</h3>
+            <form onSubmit={handleAddItem} method="post">
               <div className="flex flex-col space-y-1 ">
-                <span className="text-xs m-0">Selected supplier</span>
-                <input
-                  name="supplier_name"
-                  type="text"
-                  placeholder="Supplier"
-                  defaultValue={selectedSupplier.name}
-                  className="form-control mb-5"
-                  readOnly
-                />
+                <span className="text-xs m-0">{t('Selected supplier')}</span>
+                <div className="mb-5">
+                  <input
+                    name="supplier_name"
+                    type="text"
+                    placeholder="Supplier"
+                    defaultValue={selectedSupplier.name}
+                    className="form-control w-full"
+                    readOnly
+                  />
 
-                <input
-                  name="supplier_id"
-                  type="hidden"
-                  placeholder="Supplier"
-                  defaultValue={selectedSupplier.id}
-                  className="form-control mb-5"
-                  readOnly
-                />
+                  <input
+                    name="supplier_id"
+                    type="text"
+                    placeholder="Supplier"
+                    defaultValue={selectedSupplier.id}
+                    className="form-control w-full"
+                    readOnly
+                  />
+                </div>
 
                 <select name="image" className="form-control">
                   <option value="/warehouse.jpg">Test - Warehouse</option>
@@ -412,11 +341,18 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
                   className="form-control "
                 /> */}
 
-                <textarea
+                <input
                   name="name"
+                  type="text"
                   placeholder="Name"
                   className="form-control"
                   required
+                />
+
+                <textarea
+                  name="desc"
+                  placeholder="Item Description"
+                  className="form-control"
                 />
 
                 <input
@@ -435,28 +371,26 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
                   name="price"
                   type="number"
                   placeholder="Price"
-                  defaultValue={0}
                   className="form-control"
                 />
-                <input
+                {/* <input
                   name="stocks"
                   type="number"
                   placeholder="Stocks"
-                  defaultValue={0}
                   className="form-control"
-                />
+                /> */}
               </div>
 
               <div className="flex gap-2 mt-4">
                 <button
                   className="btn flex-1"
-                  onClick={() => setSelectedSupplier(null)}
+                  onClick={() => setSelectedSupplier(false)}
                   type="button"
                 >
-                  Back
+                  {t('Back')}
                 </button>
                 <button className="btn flex-1" type="submit">
-                  Save
+                  {t('Save')}
                 </button>
               </div>
             </form>
@@ -467,44 +401,110 @@ const AddItemModal = ({ saveCallback, cancelCallback }) => {
   )
 }
 
-const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
+const EditItemModal = ({ data, closeModal }) => {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: fetchSuppliers,
   })
+
+  const { mutateAsync: patchItem } = useMutation({
+    mutationFn: editItemMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
+  })
+
+  const handleEditItem = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = form.querySelector('button[type="submit"]')
+    btn.disabled = true
+
+    try {
+      await patchItem({
+        id: data.id,
+        short_name: form.elements['name']?.value,
+        supplier_id: form.elements['supplier_id']?.value,
+        sku_number: form.elements['external_sku']?.value,
+        internet_sku_number: form.elements['internal_sku']?.value,
+        item_desc: form.elements['desc']?.value,
+        item_price: parseFloat(form.elements['price']?.value),
+      })
+      // closeModal()
+      toast.success('Update success')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
+  const { mutateAsync: deleteItem } = useMutation({
+    mutationFn: removeItemMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
+  })
+  const handleDeleteItem = async (e) => {
+    const btn = e.target
+    btn.disabled = true
+    try {
+      await deleteItem({ id: data.id })
+      closeModal()
+      toast.success('Delete success')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
   return (
     <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={saveCallback} method="post">
+      <form onSubmit={handleEditItem} method="post">
         <div className="mb-3 flex justify-between items-center">
-          <h3 className="font-semibold text-xl">Edit item</h3>
-          <button className="action-button !text-red-500 ">Delete</button>
+          <h3 className="font-semibold text-xl">Edit item details</h3>
+          <button
+            className="action-link not-disabled:!text-red-500 !px-0"
+            onClick={handleDeleteItem}
+            type="button"
+          >
+            Delete
+          </button>
         </div>
 
         {/* MODAL'S CONTENT */}
-        <div className="flex flex-col space-y-1 max-h-[75lvh] overflow-auto p-2 border-y border-gray-400">
+        <div className="space-y-1 max-h-[75lvh] overflow-auto p-2 border-y border-gray-400">
           <input type="hidden" name="id" value={data?.id} />
-
           <label className="mb-0 text-xs italic">Display image</label>
           <input
             type="file"
-            name="product_img"
+            name="image"
             accept="image/*"
-            className="form-control"
+            className="form-control w-full"
           />
 
           <label className="mb-0 text-xs italic">Item name</label>
-          <textarea
+          <input
             name="name"
+            type="text"
             placeholder="Quantum Wrench 1200/12ft"
-            defaultValue={data?.name}
-            className="form-control"
+            defaultValue={data?.short_name}
+            className="form-control w-full"
           />
-
+          <label className="mb-0 text-xs italic">Item description</label>
+          <textarea
+            name="desc"
+            placeholder="..."
+            defaultValue={data?.item_desc}
+            className="form-control w-full"
+          />
           <label className="mb-0 text-xs italic">Supplier</label>
           <select
-            name="supplier"
-            defaultValue={data.supplier}
-            className="form-control"
+            name="supplier_id"
+            defaultValue={data?.supplier_id}
+            className="form-control w-full"
           >
             {suppliers.map((sup) => (
               <option key={sup.id} value={sup.id}>
@@ -512,40 +512,36 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
               </option>
             ))}
           </select>
-
           <label className="mb-0 text-xs italic">Supplier's SKU</label>
           <input
             name="external_sku"
             type="text"
             placeholder="SKU-9M1LT8"
-            defaultValue={data?.external_sku}
+            defaultValue={data?.sku_number}
             className="w-full border rounded p-2"
           />
-
           <label className="mb-0 text-xs italic">Internal SKU</label>
           <input
             name="internal_sku"
             type="text"
             placeholder="DTH000000001"
-            defaultValue={data?.internal_sku}
+            defaultValue={data?.internet_sku_number}
             className="w-full border rounded p-2"
           />
-
           <label className="mb-0 text-xs italic">Price</label>
           <input
             name="price"
             type="number"
             placeholder="$100.00"
-            defaultValue={data?.price}
+            defaultValue={data?.item_price}
             className="w-full border rounded p-2"
           />
-
-          <label className="mb-0 text-xs italic">Available Stocks</label>
+          <label className="mb-0 text-xs italic">Onhand</label>
           <input
             name="stocks"
             type="number"
             placeholder="100"
-            defaultValue={data?.stocks}
+            defaultValue={data?.inventory}
             className="w-full border rounded p-2"
           />
         </div>
@@ -553,16 +549,16 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
         <div className="flex gap-2 mt-4">
           <button
             className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            onClick={cancelCallback}
+            onClick={closeModal}
             type="button"
           >
-            Close
+            {t('Close')}
           </button>
           <button
             className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
             type="submit"
           >
-            Save
+            {t('Save')}
           </button>
         </div>
       </form>

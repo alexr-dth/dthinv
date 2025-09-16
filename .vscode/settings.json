@@ -7,5 +7,29 @@
   },
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true
+  },
+
+  "surround.custom": {
+    "wrapWithT": {
+      "label": "Wrap with {t()}ss",
+      "description": "Wrap selection with {t(\"...\")}",
+      "snippet": "{t(\"$TM_SELECTED_TEXT\")}$0",
+      "languageIds": [
+        "javascript",
+        "typescript",
+        "javascriptreact",
+        "typescriptreact",
+        "html",
+        "markdown"
+      ]
+    }
   }
 }

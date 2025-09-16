@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hardware Depot – Order PDF Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- jsPDF + AutoTable (CDN) -->
+    <script src="https://unpkg.com/jspdf@3.0.2/dist/jspdf.node.min.js"></script>
+    <script
+      src="https://unpkg.com/jspdf-autotable@5.0.2/dist/jspdf.plugin.autotable.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --ink: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #22c55e;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Inter,
+          Arial,
+          sans-serif;
+        background: linear-gradient(180deg, #0b1220, #0f172a);
+        color: var(--ink);
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 24px;
+        background: rgba(17, 24, 39, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+      }
+      h1 {
+        font-size: clamp(22px, 3vw, 30px);
+        margin: 0 0 16px;
+      }
+      p.lead {
+        color: var(--muted);
+        margin: 0 0 24px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        background: #0b1020;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 10px 12px;
+        outline: none;
+      }
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+      .btnbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      button {
+        background: var(--accent);
+        color: #052e10;
+        border: 0;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      code.inline {
+        background: #0b1020;
+        padding: 2px 6px;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .preview {
+        margin-top: 20px;
+        border: 1px dashed rgba(148, 163, 184, 0.25);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      tfoot td {
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Order PDF Generator</h1>
+      <p class="lead">
+        Fill the order details (or keep defaults) and press
+        <strong>Generate PDF</strong>. The PDF will include your header info and
+        the items table.
+      </p>
+
+      <div class="grid">
+        <div>
+          <label for="orderDate">Order Request Date</label>
+          <input id="orderDate" type="date" />
+        </div>
+        <div>
+          <label for="orderNo">Order #</label>
+          <input
+            id="orderNo"
+            type="text"
+            placeholder="e.g., ORD-2025-0913-01"
+          />
+        </div>
+        <div>
+          <label for="requestedBy">Requested By</label>
+          <input id="requestedBy" type="text" placeholder="Your Name" />
+        </div>
+        <div>
+          <label for="department">Department</label>
+          <input id="department" type="text" placeholder="e.g., Maintenance" />
+        </div>
+        <div>
+          <label for="supplier">Supplier</label>
+          <input id="supplier" type="text" placeholder="Hardware Depot" />
+        </div>
+        <div>
+          <label for="paymentTerms">Payment Terms</label>
+          <input id="paymentTerms" type="text" placeholder="e.g., Net 30" />
+        </div>
+      </div>
+
+      <label for="deliveryAddress">Delivery Address</label>
+      <textarea id="deliveryAddress" placeholder="Street, City, ZIP"></textarea>
+
+      <label for="notes" style="margin-top: 8px">Notes</label>
+      <textarea id="notes" placeholder="Special instructions"></textarea>
+
+      <div class="btnbar">
+        <button id="makePdf">Generate PDF</button>
+        <span class="hint"
+          >Tip: You can edit the items array inside the code (look for
+          <code class="inline">items</code>).</span
+        >
+      </div>
+
+      <!-- lightweight on-page preview of the items you’ll export -->
+      <div class="preview">
+        <table id="itemsPreview">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Description/Name</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" id="previewTotal"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // --- Sample items (edit these as needed) ---
+      const items = [
+        {
+          SKU: 'HD-001',
+          Description: 'Hammer, 16oz Claw',
+          Quantity: 10,
+          Price: 12.5,
+          Remarks: 'n/a',
+        },
+        {
+          SKU: 'HD-002',
+          Description: 'Screwdriver Set (6 pcs)',
+          Quantity: 5,
+          Price: 18.75,
+          Remarks: 'Preferred brand: Stanley',
+        },
+        {
+          SKU: 'HD-003',
+          Description: 'Measuring Tape 5m',
+          Quantity: 12,
+          Price: 7.2,
+          Remarks: 'n/a',
+        },
+        {
+          SKU: 'HD-004',
+          Description: 'Drill Bit Set (10 pcs, HSS)',
+          Quantity: 4,
+          Price: 22.0,
+          Remarks: 'Urgent',
+        },
+        {
+          SKU: 'HD-005',
+          Description: 'Safety Gloves (Pair, Large)',
+          Quantity: 20,
+          Price: 3.5,
+          Remarks: 'n/a',
+        },
+      ]
+
+      // Utility: format money
+      const fmt = (n) =>
+        new Intl.NumberFormat(undefined, {
+          style: 'currency',
+          currency: 'USD',
+        }).format(n)
+
+      // Fill defaults for the header form
+      ;(function initDefaults() {
+        const today = new Date()
+        document.getElementById('orderDate').value = today
+          .toISOString()
+          .slice(0, 10)
+        document.getElementById('orderNo').value =
+          `ORD-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-01`
+        document.getElementById('requestedBy').value = 'Jane Doe'
+        document.getElementById('department').value = 'Maintenance'
+        document.getElementById('supplier').value = 'Hardware Depot'
+        document.getElementById('paymentTerms').value = 'Net 30'
+        document.getElementById('deliveryAddress').value =
+          '123 Workshop Ave, Makati, 1200'
+        document.getElementById('notes').value =
+          'Please confirm availability before dispatch.'
+        renderPreview()
+      })()
+
+      function renderPreview() {
+        const tbody = document.querySelector('#itemsPreview tbody')
+        tbody.innerHTML = ''
+        let grand = 0
+        items.forEach((it) => {
+          grand += Number(it.Price) * Number(it.Quantity)
+          const tr = document.createElement('tr')
+          tr.innerHTML = `
+          <td>${it.SKU}</td>
+          <td>${it.Description}</td>
+          <td>${it.Quantity}</td>
+          <td>${fmt(it.Price)}</td>
+          <td>${it.Remarks}</td>
+        `
+          tbody.appendChild(tr)
+        })
+        document.getElementById('previewTotal').textContent =
+          `Estimated total: ${fmt(grand)}`
+      }
+
+      document.getElementById('makePdf').addEventListener('click', async () => {
+        const { jsPDF } = window.jspdf
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+
+        // Collect header fields
+        const orderDate = document.getElementById('orderDate').value
+        const orderNo = document.getElementById('orderNo').value.trim()
+        const requestedBy = document.getElementById('requestedBy').value.trim()
+        const department = document.getElementById('department').value.trim()
+        const supplier = document.getElementById('supplier').value.trim()
+        const paymentTerms = document
+          .getElementById('paymentTerms')
+          .value.trim()
+        const address = document.getElementById('deliveryAddress').value.trim()
+        const notes = document.getElementById('notes').value.trim()
+
+        // Header
+        const left = 48
+        let y = 56
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(18)
+        doc.text('Order Request', left, y)
+        y += 10
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(120)
+
+        const headerLines = [
+          `Order Request Date: ${orderDate}`,
+          `Order #: ${orderNo}`,
+          `Requested By: ${requestedBy}`,
+          `Department: ${department}`,
+          `Supplier: ${supplier}`,
+          `Delivery Address: ${address}`,
+          `Payment Terms: ${paymentTerms}`,
+          notes ? `Notes: ${notes}` : null,
+        ].filter(Boolean)
+
+        // Draw header block
+        y += 16
+        doc.setTextColor(30)
+        doc.setFontSize(11)
+        headerLines.forEach((line) => {
+          doc.text(line, left, y)
+          y += 16
+        })
+
+        // Build table data for AutoTable
+        const head = [
+          ['SKU', 'Description/Name', 'Quantity', 'Price', 'Remarks'],
+        ]
+        const body = items.map((it) => [
+          it.SKU,
+          it.Description,
+          String(it.Quantity),
+          fmt(Number(it.Price)),
+          it.Remarks,
+        ])
+
+        // Compute grand total
+        const grand = items.reduce(
+          (acc, it) => acc + Number(it.Price) * Number(it.Quantity),
+          0,
+        )
+
+        // AutoTable with footer and page numbers
+        doc.autoTable({
+          startY: y + 8,
+          head,
+          body,
+          styles: { fontSize: 10, cellPadding: 6 },
+          headStyles: { fillColor: [15, 23, 42], textColor: 255 },
+          columnStyles: {
+            0: { cellWidth: 90 },
+            1: { cellWidth: 210 },
+            2: { halign: 'right', cellWidth: 70 },
+            3: { halign: 'right', cellWidth: 90 },
+            4: { cellWidth: 120 },
+          },
+          didDrawPage: (data) => {
+            // Footer: page numbers
+            const pageSize = doc.internal.pageSize
+            const pageWidth = pageSize.getWidth()
+            const pageHeight = pageSize.getHeight()
+            doc.setFontSize(9)
+            doc.setTextColor(120)
+            const pageStr = `Page ${doc.internal.getNumberOfPages()}`
+            doc.text(pageStr, pageWidth - 60, pageHeight - 20)
+          },
+          margin: { left: left, right: 48 },
+        })
+
+        // Grand total box
+        const finalY = doc.lastAutoTable.finalY + 12
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(12)
+        doc.text(`Grand Total: ${fmt(grand)}`, left, finalY)
+
+        // Save
+        const safeOrderNo = orderNo || 'ORDER'
+        doc.save(`${safeOrderNo}.pdf`)
+      })
+    </script>
+  </body>
+</html>

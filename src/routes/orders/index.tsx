@@ -1,32 +1,28 @@
-import { removeOrderMutation, fetchOrders } from '@/api/api'
-import ErrorScreen from '@/components/ErrorScreen'
-import PageLoader from '@/components/PageLoader'
-import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { LucideListFilter, LucideMenu } from 'lucide-react'
+import { LucideMenu } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/orders/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const {
-    data = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['orders'],
-    queryFn: fetchOrders,
-  })
-
-  if (isLoading) return <PageLoader />
-  if (error) return <ErrorScreen error={error} />
+  const [activeModal, setActiveModal] = useState<{
+    name: string
+    data?: any
+  } | null>(null)
   return (
     <>
-      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+      {activeModal != null && (
+        <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
+          <div className="w-dvw max-w-lg">
+            {activeModal.name == 'editRequested' && <>Modal here</>}
+          </div>
+        </div>
+      )}
+
+      <div className="page-container">
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
@@ -44,53 +40,32 @@ function RouteComponent() {
           </button> */}
         </div>
         <h2 className="page-title">All Orders</h2>
-
-        {/* BELOW-TITLE OPTIONS */}
-        <div
-          id="title-buttons"
-          className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2"
-        >
-          <Link className="action-link" to="/orders/new">
-            New order
-          </Link>
-
-          <Link className="action-link disabled" to="/" disabled>
-            Dashboard
-          </Link>
+        <div id="title-buttons" className="space-x-1 overflow-auto mb-2">
+          <button className="cursor-pointer text-sm px-2 rounded-full border">
+            Home Depot
+          </button>
+          <button className="cursor-pointer text-sm px-2 rounded-full border">
+            Hardware Resources
+          </button>
+          <button className="cursor-pointer text-sm px-2 rounded-full border">
+            Amazon
+          </button>
         </div>
 
-        <ProductSearchBarWithFilters />
+        <ItemSearchBarWithFilters />
 
         <ul className="divide-y divide-gray-400">
-          {data.map((order) => (
-            <OrderSetCardRowView data={order} />
-          ))}
+          <OrderSetCard data={{}} status={'approved'} />
+          <OrderSetCard data={{}} status={'pending-approval'} />
+          <OrderSetCard data={{}} status={'open-order'} />
         </ul>
       </div>
     </>
   )
 }
 
-const OrderSetCardRowView = ({ data: order }) => {
+const OrderSetCard = ({ data: order, status }) => {
   const [optionExpanded, setOptionExpanded] = useState(false)
-  const queryClient = useQueryClient()
-
-  const { mutateAsync: deleteOrder } = useMutation({
-    mutationFn: removeOrderMutation,
-    onSuccess: () => queryClient.invalidateQueries(['orders']),
-  })
-
-  const handleRemoveOrder = async (e, id) => {
-    const btn = e.target
-    btn.disabled = true
-    try {
-      await deleteOrder(id)
-    } finally {
-      setOptionExpanded(false)
-      toast.success('Deleted order')
-      btn.disabled = false
-    }
-  }
 
   const totalPrice = (items = []) =>
     items.reduce(
@@ -105,30 +80,30 @@ const OrderSetCardRowView = ({ data: order }) => {
     <li className="flex items-start gap-2 min-h-30 overflow-visible py-4">
       <div className="truncate self-stretch flex flex-col justify-between flex-1">
         <div className="flex-1/4 text-xs flex">
-          <span className="font-bold me-2 truncate ">
-            {order.supplier?.name || 'undefined'}
-          </span>
+          <span className="font-bold me-2 truncate ">{'Home Depot'}</span>
           <span className="text-gray-500 truncate flex-shrink-0 flex-1/3">
-            #{order.external_tracking_number || 'EXT-TRKNO-MISSING'}
+            {'EXT-TRKNO-MISSING'}
           </span>
         </div>
-        <div className="text-wrap line-clamp-2 text-lg leading-4 pb-2 mb-2">
-          {order.name}
+        <div className="text-wrap line-clamp-2 text-lg leading-5 pb-2 mb-2">
+          {
+            'Additional supplies for Project DTH-101. This additional details and more details'
+          }
         </div>
         <div className="flex-1/4 mb-1 text-sm">
           <Link
             to="/orders/$orderId"
-            params={{ orderId: order.id }}
+            params={{ orderId: 101 }}
             className="underline text-blue-500"
           >
-            #{order.internal_tracking_number || 'INT-TRKNO-MISSING'}
+            #{'INT-TRKNO-MISSING'}
           </Link>
         </div>
         <div className="flex-1/4 text-sm flex items-center justify-between gap-1">
           <span
-            className={`status-${order.status || 'undefined'} font-bold rounded-full px-4 truncate flex-shrink-1 uppercase`}
+            className={`status-badge ${'quote-requested' || 'undefined'} flex-shrink-1`}
           >
-            {order.status?.replace('-', ' ') || 'undefined'}
+            {'quote-requested'.replace('-', ' ') || 'undefined'}
           </span>
           <span className="font-semibold flex-grow-0 flex-shrink-0 w-1/3 truncate text-end">
             ${totalPrice(order.items).toFixed(2) || 'n/a'}
@@ -139,7 +114,7 @@ const OrderSetCardRowView = ({ data: order }) => {
       <div className="ms-auto relative">
         <LucideMenu
           size={32}
-          className=" p-1.5 ursor-pointer text-black "
+          className=" p-1.5 cursor-pointer text-black "
           onClick={(e) => {
             e.stopPropagation()
             setOptionExpanded(!optionExpanded)
@@ -148,15 +123,13 @@ const OrderSetCardRowView = ({ data: order }) => {
         {optionExpanded && (
           <div className="absolute border bg-white shadow p-1 rounded right-full top-0">
             <div className="flex flex-col divide-y divide-gray-400">
-              <button
+              <Link
                 className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setOptionExpanded(false)
-                }}
+                to="/orders/$orderId/edit"
+                params={{ orderId: 101 }}
               >
                 Update Order
-              </button>
+              </Link>
               <button
                 className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={(e) => {
@@ -165,19 +138,7 @@ const OrderSetCardRowView = ({ data: order }) => {
                 }}
                 disabled={order.status === 'approved'}
               >
-                Update Deliver
-              </button>
-              <button
-                className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleRemoveOrder(e, order.id)
-                }}
-                disabled={
-                  order.status === 'approved' || order.status === 'open-order'
-                }
-              >
-                Delete Order
+                Receive
               </button>
             </div>
           </div>

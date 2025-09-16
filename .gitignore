@@ -11,5 +11,6 @@ count.txt
 .env
 .nitro
 .tanstack
+supabase/
 
 

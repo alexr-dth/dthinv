@@ -1,0 +1,32 @@
+{
+  "Lock body scroll on modal open": {
+    "prefix": "lockscroll",
+    "body": [
+      "useEffect(() => {",
+      "  document.body.style.overflow = activeModal?.name ? 'hidden' : 'auto'",
+      "}, [activeModal])",
+    ],
+    "description": "Adds a useEffect hook to lock/unlock body scroll when a modal is open",
+  },
+
+  "Handle form submit with disabled button": {
+    "prefix": "submitdisable",
+    "body": [
+      "e.preventDefault()",
+      "const form = e.target",
+      "const btn = form.querySelector(\"button[type='submit']\")",
+      "btn.disabled = true",
+      "",
+      "try {",
+      "  const newItem = {",
+      "    name: form.elements['name']?.value || '',",
+      "  }",
+      "  // await createLocation(newItem)",
+      "} finally {",
+      "  // closeModal()",
+      "  btn.disabled = false",
+      "}",
+    ],
+    "description": "Prevents default form submit, disables submit button, handles logic, and re-enables button after completion",
+  },
+}

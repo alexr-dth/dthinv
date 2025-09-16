@@ -13,7 +13,7 @@ import {
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import toast from 'react-hot-toast'
-import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 
 const depthColors = [
   'bg-blue-300 text-blue-900', // Level 1
@@ -263,7 +263,7 @@ function RouteComponent() {
         </div>
 
         {/* TODO: Change this component to something that will make sense in this context */}
-        <ProductSearchBarWithFilters />
+        <ItemSearchBarWithFilters />
 
         <ReactSortable
           className="space-y-3"

@@ -42,4 +42,7 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  define: {
+    __APP_BUILD_DATE__: JSON.stringify(new Date().toLocaleString('en-US')),
+  },
 })

@@ -1,7 +1,7 @@
 import { fetchItems, fetchLocationById } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import ProductSearchBarWithFilters from '@/components/ProductSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -60,7 +60,7 @@ function RouteComponent() {
           Location Inventory
         </h2>
 
-        <ProductSearchBarWithFilters />
+        <ItemSearchBarWithFilters />
 
         <div
           id="title-buttons"
@@ -101,7 +101,7 @@ const ItemCard = ({ data, setActiveModal }) => {
   return (
     <div className="rounded border p-2 h-full flex flex-col">
       <img
-        src={data.image || 'missing.jpg'}
+        src={data?.item_image || 'missing.jpg'}
         alt=""
         className="w-full aspect-square object-cover mb-2"
       />
@@ -140,7 +140,7 @@ const ItemRowCard = ({ data, setActiveModal }) => {
   return (
     <div className="rounded border p-2 h-full flex gap-2">
       <img
-        src={data.image || 'missing.jpg'}
+        src={data?.item_image || 'missing.jpg'}
         alt=""
         className="w-1/4 object-contain"
       />

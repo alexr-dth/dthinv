@@ -28,8 +28,17 @@ code {
 
 input[type='text'].form-control,
 input[type='search'].form-control,
-input[type='number'].form-control {
-  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed;
+input[type='number'].form-control,
+input[type='password'].form-control {
+  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed disabled:bg-gray-200 disabled:cursor-not-allowed;
+}
+
+input[type='text'].form-control-bare,
+input[type='search'].form-control-bare,
+input[type='number'].form-control-bare,
+input[type='password'].form-control-bare,
+textarea.form-control-bare {
+  @apply border-b focus:outline-0 field-sizing-content resize-none;
 }
 
 input[type='text'].form-control.required,
@@ -42,13 +51,16 @@ textarea.form-control.required {
 
 select.form-control,
 textarea.form-control {
-  @apply border rounded p-2;
+  @apply border rounded p-2 cursor-pointer;
 }
 
 input[type='file'].form-control {
-  @apply py-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
+  @apply py-2 file:cursor-pointer file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
 }
 
+input[type='checkbox'] + label {
+  @apply cursor-pointer hover:underline;
+}
 .action-link {
   @apply text-blue-500 px-1 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed disabled:line-through aria-selected:text-blue-200;
 }
@@ -57,22 +69,30 @@ input[type='file'].form-control {
   @apply !text-gray-300 !cursor-not-allowed line-through;
 }
 
-.status-approved {
+.status-badge {
+  @apply font-bold rounded-full px-4 truncate uppercase;
+}
+
+.status-badge.fulfilled {
   @apply bg-green-200 text-green-900; /* Success / Approved */
 }
 
-.status-pending-approval {
+.status-badge.quote-requested {
   @apply bg-yellow-200 text-yellow-900; /* Waiting / Pending */
 }
 
-.status-open-order {
+.status-badge.awaiting-delivery {
   @apply bg-blue-200 text-blue-900; /* Active / Open */
 }
 
-.status-undefined {
+.status-badge.undefined {
   @apply bg-gray-200 text-gray-900;
 }
 
 .page-title {
-  @apply text-2xl text-center mb-3 font-bold;
+  @apply text-2xl mb-3 font-bold;
+}
+
+.page-container {
+  @apply sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3 min-h-[100lvh];
 }

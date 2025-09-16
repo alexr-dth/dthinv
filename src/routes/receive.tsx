@@ -87,26 +87,32 @@ function RouteComponent() {
   } | null>(null)
 
   useEffect(() => {
-    document.addEventListener('PDA_SCAN', (e) => {
+    const handleScan = (e) => {
       const scannedValue = e.detail.value
       console.log(scannedValue)
-    })
+      // checkIfItemExist(null, scannedValue)
+    }
 
-    document.addEventListener('PDA_BUTTON_1', () => {
-      console.log('PDA_BUTTON_1_PRESSED!')
-    })
+    const handleBtn1 = () => console.log('PDA_BUTTON_1_PRESSED!')
+    const handleBtn2 = () => console.log('PDA_BUTTON_2_PRESSED!')
+    const handleBtn3 = () => console.log('PDA_BUTTON_3_PRESSED!')
+    const handleBtn4 = () => console.log('PDA_BUTTON_4_PRESSED!')
 
-    document.addEventListener('PDA_BUTTON_2', () => {
-      console.log('PDA_BUTTON_2_PRESSED!')
-    })
+    // Add listeners
+    document.addEventListener('PDA_SCAN', handleScan)
+    document.addEventListener('PDA_BUTTON_1', handleBtn1)
+    document.addEventListener('PDA_BUTTON_2', handleBtn2)
+    document.addEventListener('PDA_BUTTON_3', handleBtn3)
+    document.addEventListener('PDA_BUTTON_4', handleBtn4)
 
-    document.addEventListener('PDA_BUTTON_3', () => {
-      console.log('PDA_BUTTON_3_PRESSED!')
-    })
-
-    document.addEventListener('PDA_BUTTON_4', () => {
-      console.log('PDA_BUTTON_4_PRESSED!')
-    })
+    // Cleanup: remove on unmount
+    return () => {
+      document.removeEventListener('PDA_SCAN', handleScan)
+      document.removeEventListener('PDA_BUTTON_1', handleBtn1)
+      document.removeEventListener('PDA_BUTTON_2', handleBtn2)
+      document.removeEventListener('PDA_BUTTON_3', handleBtn3)
+      document.removeEventListener('PDA_BUTTON_4', handleBtn4)
+    }
   })
 
   const closeModal = () => setActiveModal(null)
@@ -166,20 +172,25 @@ function RouteComponent() {
         </div>
       )}
 
-      <div className="mx-3 sm:w-sm sm:mx-auto mt-5 border rounded p-3">
-        <div className="divide-x ">
-          <Link to="/" className="action-link !ps-0">
-            Home
-          </Link>
-          <button
-            onClick={() => window.history.back()}
-            className="action-link px-1"
-          >
-            Back
-          </button>
+      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+        <div className="flex justify-between">
+          <div className="divide-x ">
+            <Link to="/" className="action-link !ps-0">
+              Home
+            </Link>
+            <button
+              onClick={() => window.history.back()}
+              className="action-link px-1"
+            >
+              Back
+            </button>
+          </div>
+          {/* <button className="action-link">
+            Save
+          </button> */}
         </div>
 
-        <h2 className="text-2xl text-center mb-3 font-bold">Receive Items</h2>
+        <h2 className="page-title">Receive Items</h2>
 
         <div>
           <form onSubmit={searchCode}>

@@ -1,8 +1,8 @@
-import { addItemMutation, addSupplierMutation } from '@/api/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import { addItemMutation, addSupplierMutation } from '@/api/api'
 
 export const Route = createFileRoute('/suppliers/add')({
   component: RouteComponent,
@@ -16,12 +16,12 @@ function RouteComponent() {
 
   const { mutateAsync: createSupplier } = useMutation({
     mutationFn: addSupplierMutation,
-    onSuccess: () => queryClient.invalidateQueries(['suppliers']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
   })
 
-  const { mutateAsync: createItem } = useMutation({
+  const { mutateAsync: createManyItem } = useMutation({
     mutationFn: addItemMutation,
-    onSuccess: () => queryClient.invalidateQueries(['items']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
   })
 
   const handleAddSupplierWithItems = async (e) => {
@@ -30,33 +30,38 @@ function RouteComponent() {
     const btn = e.nativeEvent.submitter
     btn.disabled = true
     try {
-      const supplierName = form.elements['name']?.value
-      const supplierQr = form.elements['barcode_qr']?.value
-      const newSupplier = { name: supplierName, barcode_qr: supplierQr }
+      const { id: supplierId } = await createSupplier({
+        name: form.elements['name']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
+      })
 
-      const { id: supplierId } = await createSupplier(newSupplier)
-      toast.success('Added supplier')
       if (!items.length) return
       try {
-        newSupplier.id = supplierId
         const newItems = items
           .filter(({ name }) => !!name)
           .map((i) => ({
-            ...i,
             id: undefined,
-            supplier: newSupplier,
+            supplier_id: supplierId,
+            short_name: i['name'],
+            sku_number: i['external_sku'],
+            internet_sku_number: i['internal_sku'],
+            item_desc: i['desc'],
+            item_price: parseFloat(i['price']),
+            item_image: i['image'],
           }))
-        if (!newItems.length) return
 
-        // TESTING: This would only add the first item. need server to add items synchrounously
-        await createItem(newItems[0])
-        toast.success('Added supplier')
+        if (!newItems.length) return
+        await createManyItem(newItems)
+        navigate({ to: '/items' })
+        toast.success('Added supplier and items')
       } catch (error) {
         toast.error('Error adding items')
       }
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
     } finally {
       btn.disabled = false
-      navigate({ to: '/items' })
     }
   }
 
@@ -169,8 +174,10 @@ const NewSupplierItem = ({
         onClick={() => setExpanded(data.id)}
       >
         <span>Item {index + 1}</span>
-        <span className={`${expanded && '!text-white'} ${nameRef.current && nameRef.current.value && `hidden`} text-gray-500 text-xs`}>
-           (name required)
+        <span
+          className={`${expanded && '!text-white'} ${nameRef.current && nameRef.current.value && `hidden`} text-gray-500 text-xs`}
+        >
+          (name required)
         </span>
         <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
       </div>
@@ -186,18 +193,28 @@ const NewSupplierItem = ({
             <option value="/wrench.jpg">Test - Wrench</option>
             <option value="/drill.jpg">Test - Drill</option>
           </select>
-          <textarea
+
+          <input
             name="name"
+            type="text"
             placeholder="*Name"
             className="form-control required"
             ref={nameRef}
           />
+
+          <textarea
+            name="desc"
+            placeholder="Item Description"
+            className="form-control"
+          />
+
           <input
             name="external_sku"
             type="text"
             placeholder="External SKU"
             className="form-control"
           />
+
           <input
             name="internal_sku"
             type="text"
@@ -208,14 +225,6 @@ const NewSupplierItem = ({
             name="price"
             type="number"
             placeholder="Price"
-            defaultValue={0}
-            className="form-control"
-          />
-          <input
-            name="stocks"
-            type="number"
-            placeholder="Stocks"
-            defaultValue={0}
             className="form-control"
           />
         </form>

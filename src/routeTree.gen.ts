@@ -9,20 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReceiveRouteImport } from './routes/receive'
+import { Route as PdfRouteImport } from './routes/pdf'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RequestsIndexRouteImport } from './routes/requests/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as NotificationsIndexRouteImport } from './routes/notifications/index'
 import { Route as LocationsIndexRouteImport } from './routes/locations/index'
 import { Route as ItemsIndexRouteImport } from './routes/items/index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
+import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
-import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
+import { Route as OrdersOrderIdIndexRouteImport } from './routes/orders/$orderId/index'
+import { Route as OrdersOrderIdEditRouteImport } from './routes/orders/$orderId/edit'
 import { Route as LocationsLocationIdItemsRouteImport } from './routes/locations/$locationId.items'
 
+const RequestRoute = RequestRouteImport.update({
+  id: '/request',
+  path: '/request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReceiveRoute = ReceiveRouteImport.update({
   id: '/receive',
   path: '/receive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PdfRoute = PdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -30,9 +52,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RequestsIndexRoute = RequestsIndexRouteImport.update({
+  id: '/requests/',
+  path: '/requests/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsIndexRoute = NotificationsIndexRouteImport.update({
+  id: '/notifications/',
+  path: '/notifications/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocationsIndexRoute = LocationsIndexRouteImport.update({
@@ -55,14 +87,24 @@ const SuppliersAddRoute = SuppliersAddRouteImport.update({
   path: '/suppliers/add',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersNew2Route = OrdersNew2RouteImport.update({
+  id: '/orders/new2',
+  path: '/orders/new2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersNewRoute = OrdersNewRouteImport.update({
   id: '/orders/new',
   path: '/orders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
-  id: '/orders/$orderId',
-  path: '/orders/$orderId',
+const OrdersOrderIdIndexRoute = OrdersOrderIdIndexRouteImport.update({
+  id: '/orders/$orderId/',
+  path: '/orders/$orderId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersOrderIdEditRoute = OrdersOrderIdEditRouteImport.update({
+  id: '/orders/$orderId/edit',
+  path: '/orders/$orderId/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocationsLocationIdItemsRoute =
@@ -74,100 +116,170 @@ const LocationsLocationIdItemsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/request': typeof RequestRoute
   '/orders/new': typeof OrdersNewRoute
+  '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory': typeof InventoryIndexRoute
   '/items': typeof ItemsIndexRoute
   '/locations': typeof LocationsIndexRoute
+  '/notifications': typeof NotificationsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/requests': typeof RequestsIndexRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/orders/$orderId': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/request': typeof RequestRoute
   '/orders/new': typeof OrdersNewRoute
+  '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory': typeof InventoryIndexRoute
   '/items': typeof ItemsIndexRoute
   '/locations': typeof LocationsIndexRoute
+  '/notifications': typeof NotificationsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/requests': typeof RequestsIndexRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/orders/$orderId': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/request': typeof RequestRoute
   '/orders/new': typeof OrdersNewRoute
+  '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
   '/inventory/': typeof InventoryIndexRoute
   '/items/': typeof ItemsIndexRoute
   '/locations/': typeof LocationsIndexRoute
+  '/notifications/': typeof NotificationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/requests/': typeof RequestsIndexRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/orders/$orderId/': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/pdf'
     | '/receive'
-    | '/orders/$orderId'
+    | '/request'
     | '/orders/new'
+    | '/orders/new2'
     | '/suppliers/add'
     | '/inventory'
     | '/items'
     | '/locations'
+    | '/notifications'
     | '/orders'
+    | '/requests'
     | '/locations/$locationId/items'
+    | '/orders/$orderId/edit'
+    | '/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/pdf'
     | '/receive'
-    | '/orders/$orderId'
+    | '/request'
     | '/orders/new'
+    | '/orders/new2'
     | '/suppliers/add'
     | '/inventory'
     | '/items'
     | '/locations'
+    | '/notifications'
     | '/orders'
+    | '/requests'
     | '/locations/$locationId/items'
+    | '/orders/$orderId/edit'
+    | '/orders/$orderId'
   id:
     | '__root__'
     | '/'
+    | '/login'
+    | '/pdf'
     | '/receive'
-    | '/orders/$orderId'
+    | '/request'
     | '/orders/new'
+    | '/orders/new2'
     | '/suppliers/add'
     | '/inventory/'
     | '/items/'
     | '/locations/'
+    | '/notifications/'
     | '/orders/'
+    | '/requests/'
     | '/locations/$locationId/items'
+    | '/orders/$orderId/edit'
+    | '/orders/$orderId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  PdfRoute: typeof PdfRoute
   ReceiveRoute: typeof ReceiveRoute
-  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
+  RequestRoute: typeof RequestRoute
   OrdersNewRoute: typeof OrdersNewRoute
+  OrdersNew2Route: typeof OrdersNew2Route
   SuppliersAddRoute: typeof SuppliersAddRoute
   InventoryIndexRoute: typeof InventoryIndexRoute
   ItemsIndexRoute: typeof ItemsIndexRoute
   LocationsIndexRoute: typeof LocationsIndexRoute
+  NotificationsIndexRoute: typeof NotificationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  RequestsIndexRoute: typeof RequestsIndexRoute
   LocationsLocationIdItemsRoute: typeof LocationsLocationIdItemsRoute
+  OrdersOrderIdEditRoute: typeof OrdersOrderIdEditRoute
+  OrdersOrderIdIndexRoute: typeof OrdersOrderIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/request': {
+      id: '/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof RequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/receive': {
       id: '/receive'
       path: '/receive'
       fullPath: '/receive'
       preLoaderRoute: typeof ReceiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pdf': {
+      id: '/pdf'
+      path: '/pdf'
+      fullPath: '/pdf'
+      preLoaderRoute: typeof PdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -177,11 +289,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/requests/': {
+      id: '/requests/'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/': {
       id: '/orders/'
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications/': {
+      id: '/notifications/'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/locations/': {
@@ -212,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuppliersAddRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/new2': {
+      id: '/orders/new2'
+      path: '/orders/new2'
+      fullPath: '/orders/new2'
+      preLoaderRoute: typeof OrdersNew2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/new': {
       id: '/orders/new'
       path: '/orders/new'
@@ -219,11 +352,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orders/$orderId': {
-      id: '/orders/$orderId'
+    '/orders/$orderId/': {
+      id: '/orders/$orderId/'
       path: '/orders/$orderId'
       fullPath: '/orders/$orderId'
-      preLoaderRoute: typeof OrdersOrderIdRouteImport
+      preLoaderRoute: typeof OrdersOrderIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/$orderId/edit': {
+      id: '/orders/$orderId/edit'
+      path: '/orders/$orderId/edit'
+      fullPath: '/orders/$orderId/edit'
+      preLoaderRoute: typeof OrdersOrderIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/locations/$locationId/items': {
@@ -238,15 +378,22 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  PdfRoute: PdfRoute,
   ReceiveRoute: ReceiveRoute,
-  OrdersOrderIdRoute: OrdersOrderIdRoute,
+  RequestRoute: RequestRoute,
   OrdersNewRoute: OrdersNewRoute,
+  OrdersNew2Route: OrdersNew2Route,
   SuppliersAddRoute: SuppliersAddRoute,
   InventoryIndexRoute: InventoryIndexRoute,
   ItemsIndexRoute: ItemsIndexRoute,
   LocationsIndexRoute: LocationsIndexRoute,
+  NotificationsIndexRoute: NotificationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  RequestsIndexRoute: RequestsIndexRoute,
   LocationsLocationIdItemsRoute: LocationsLocationIdItemsRoute,
+  OrdersOrderIdEditRoute: OrdersOrderIdEditRoute,
+  OrdersOrderIdIndexRoute: OrdersOrderIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
