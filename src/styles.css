@@ -30,7 +30,7 @@ input[type='text'].form-control,
 input[type='search'].form-control,
 input[type='number'].form-control,
 input[type='password'].form-control {
-  @apply border rounded p-2 read-only:bg-gray-200 read-only:cursor-not-allowed disabled:bg-gray-200 disabled:cursor-not-allowed;
+  @apply border rounded p-2 read-only:bg-gray-200 read-only:text-gray-500 read-only:cursor-not-allowed disabled:bg-gray-200 disabled:cursor-not-allowed;
 }
 
 input[type='text'].form-control-bare,
@@ -73,15 +73,19 @@ input[type='checkbox'] + label {
   @apply font-bold rounded-full px-4 truncate uppercase;
 }
 
-.status-badge.fulfilled {
+.status-badge.fulfilled_complete {
   @apply bg-green-200 text-green-900; /* Success / Approved */
 }
 
-.status-badge.quote-requested {
+.status-badge.fulfilled_missing {
+  @apply bg-red-200 text-red-900; /* Success / Approved */
+}
+
+.status-badge.await_quote {
   @apply bg-yellow-200 text-yellow-900; /* Waiting / Pending */
 }
 
-.status-badge.awaiting-delivery {
+.status-badge.await_deliver {
   @apply bg-blue-200 text-blue-900; /* Active / Open */
 }
 

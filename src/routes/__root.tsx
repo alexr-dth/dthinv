@@ -1,7 +1,7 @@
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanstackDevtools } from '@tanstack/react-devtools'
-import { Toaster } from 'react-hot-toast'
+import toast, { Toaster } from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
 import Header from '../components/Header'
@@ -9,6 +9,8 @@ import Header from '../components/Header'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import type { QueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import axios from 'axios'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -19,6 +21,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const { i18n } = useTranslation()
     const change = (lng) => i18n.changeLanguage(lng)
     const { t } = useTranslation()
+
+    const checkServer = async () => {
+      try {
+        await axios.get('http://localhost:5012/')
+        // toast.success('Server reached')
+      } catch (error) {
+        toast.error('Server unreachable')
+      }
+    }
+
+    useEffect(() => {
+      checkServer()
+    }, [])
     return (
       <>
         {/* <Header /> */}

@@ -11,14 +11,6 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
-const sampleItem = {
-  sku_number: 856320,
-  internet_sku_number: 100124691,
-  item_price: 2.2,
-  inventory: -3,
-  short_name: '1" EMT Straps 4-Pack',
-}
-
 export const Route = createFileRoute('/orders/$orderId/')({
   component: RouteComponent,
 })
@@ -26,8 +18,8 @@ export const Route = createFileRoute('/orders/$orderId/')({
 function RouteComponent() {
   const { orderId } = useParams({ from: '/orders/$orderId/' })
   const navigate = useNavigate()
-  const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
 
+  const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
@@ -37,52 +29,31 @@ function RouteComponent() {
     data: order = {},
     isLoading,
     error,
-    dataUpdatedAt,
   } = useQuery({
-    queryKey: ['orders', String(orderId)],
+    queryKey: ['orders', orderId],
     queryFn: () => fetchOrderById(orderId),
   })
 
-  // const buildOrderSet = ({ items = [] }) => {
-  //   return Object.values(
-  //     items.reduce((acc, { supplier, ...rest }) => {
-  //       ;(acc[supplier.id] ??= { supplier, items: [] }).items.push(rest)
-  //       return acc
-  //     }, {}),
-  //   )
-  // }
-
-  // const orderSets = useMemo(() => buildOrderSet(order), [order, dataUpdatedAt])
-
   useEffect(() => {
-    if (isLoading) return
-    if (Object.keys(order).length) return
-
+    if (isLoading || Object.keys(order).length) return
     toast.error('Order not found')
     navigate({ to: '/orders' })
   }, [isLoading, order, navigate])
 
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
-      0,
-    )
-
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
-
-  const handleSaveAndExport = async (e, type) => {
+  const handleExport = async (e, type) => {
     e.preventDefault()
     const btn = e.target
     btn.disabled = true
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000))
       throw new Error()
+      // create a pdf here and downlaod it
 
-      toast.success('Order ticket created')
       setPdfOptionExpanded(false)
-    } catch (e) {
-      toast.error('Error creating order ticket')
+      toast.success('Order ticket created')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
     } finally {
       btn.disabled = false
     }
@@ -107,7 +78,7 @@ function RouteComponent() {
           </div>
           <Link
             to="/orders/$orderId/edit"
-            params={{ orderId: 101 }}
+            params={{ orderId }}
             className="action-link !ps-0"
           >
             Update
@@ -119,7 +90,9 @@ function RouteComponent() {
         <div className="space-y-3">
           <div>
             <span className="font-bold text-sm">Ordered by:</span> <br />
-            <span className="text-lg w-full ">Clark Kent</span>
+            <span className="text-lg w-full ">
+              {order.actor?.username || 'n/a'}
+            </span>
           </div>
 
           <div>
@@ -128,48 +101,46 @@ function RouteComponent() {
               name="created_at"
               type="datetime-local"
               className="text-lg w-full pointer-events-none"
-              defaultValue={new Date(
-                Date.now() - new Date().getTimezoneOffset() * 60000,
-              )
-                .toISOString()
-                .slice(0, 16)}
+              value={new Date(order.created_at)
+                .toLocaleString('sv-SE')
+                .replace(' ', 'T')}
+              readOnly
             />
           </div>
 
           <div>
             <span className="font-bold text-sm">Order name:</span> <br />
-            <span className="text-lg w-full">
-              Additional supplies for Project DTH-101.
-            </span>
+            <span className="text-lg w-full">{order.name || 'n/a'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Notes:</span> <br />
-            <span className="text-lg w-full">n/a</span>
+            <span className="text-lg w-full">{order.notes || 'n/a'}</span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Supplier Order Number:</span>{' '}
             <br />
-            <span className="text-lg w-full">EXT-TRKNO-MISSING</span>
+            <span className="text-lg w-full">
+              {order.supplier_tracking_id || 'n/a'}
+            </span>
           </div>
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
             <span
-              className={`status-badge ${'quote-requested' || 'undefined'} flex-shrink-1`}
+              className={`status-badge ${order.status || 'undefined'} flex-shrink-1`}
             >
-              {'quote-requested'.replace('-', ' ') || 'undefined'}
+              {order.status.replace('_', ' ') || 'undefined'}
             </span>
           </div>
         </div>
 
         <div className="font-bold text-sm mt-10">Products included:</div>
         <div className="space-y-2">
-          <SupplierProductSet
-            set={{}}
-            supplierName={'Home Depot'}
-            setActiveModal={setActiveModal}
+          <SupplierProductSetWithPrice
+            productList={order.requested_items}
+            supplier={order.supplier}
           />
         </div>
 
@@ -189,7 +160,7 @@ function RouteComponent() {
                 <button
                   className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => {
-                    handleSaveAndExport(e, 'internal_english')
+                    handleExport(e, 'internal_english')
                   }}
                 >
                   Internal (English)
@@ -198,7 +169,7 @@ function RouteComponent() {
                 <button
                   className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => {
-                    handleSaveAndExport(e, 'internal_chinese')
+                    handleExport(e, 'internal_chinese')
                   }}
                 >
                   Internal (Chinese)
@@ -207,7 +178,7 @@ function RouteComponent() {
                 <button
                   className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => {
-                    handleSaveAndExport(e, 'external_english')
+                    handleExport(e, 'external_english')
                   }}
                 >
                   External (English)
@@ -216,7 +187,7 @@ function RouteComponent() {
                 <button
                   className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => {
-                    handleSaveAndExport(e, 'external_internal')
+                    handleExport(e, 'external_internal')
                   }}
                 >
                   External (Chinese)
@@ -230,28 +201,30 @@ function RouteComponent() {
   )
 }
 
-const SupplierProductSet = ({ set, supplierName, setActiveModal }) => {
-  const [expanded, setExpanded] = useState(true)
+const SupplierProductSetWithPrice = ({ supplier, productList }) => {
+  const [expanded, setExpanded] = useState(false)
+
   const totalPrice = (items = []) =>
     items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
+      (sum, { requested_price: p = 0, requested_quantity: q }) => sum + p * q,
       0,
     )
+
   const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+    items.reduce((sum, { requested_quantity: q }) => sum + q, 0)
 
   return (
     <div>
       <div className="border rounded">
         <h3
-          className={` p-2 flex items-center gap-1 ${expanded && `border-b-1`}`}
+          className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
           onClick={() => setExpanded(!expanded)}
         >
           <div>
-            <h5 className="text-lg font-semibold uppercase">{supplierName}</h5>
+            <h5 className="text-lg font-semibold uppercase">{supplier.name}</h5>
             {!expanded && (
-              <span className="text-sm text-gray-500">
-                $5000 <span className="text-xs">(20 types/30 units)</span>
+              <span className="text-xs text-gray-500">
+                ({productList.length || 0} request/s)
               </span>
             )}
           </div>
@@ -259,45 +232,42 @@ const SupplierProductSet = ({ set, supplierName, setActiveModal }) => {
           <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
         </h3>
 
-        {expanded && (
-          <div className={`px-2 pb-2`}>
-            <ul className="space-y-2 divide-y divide-gray-400 pb-2">
-              <RequestedCard
-                data={sampleItem}
-                setActiveModal={setActiveModal}
-              />
+        <div className={`px-2 pb-2 ${!expanded && `hidden`}`}>
+          <ul className="space-y-2 divide-y divide-gray-400 pb-2">
+            {productList.map((item) => (
+              <RequestedProductProcessingCard key={item.id} data={item} />
+            ))}
+          </ul>
 
-              <RequestedCard
-                data={sampleItem}
-                setActiveModal={setActiveModal}
-              />
-
-              <RequestedCard
-                data={sampleItem}
-                setActiveModal={setActiveModal}
-              />
-            </ul>
-
-            <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
-              <div className="text-sm">
-                Total (2 types/10 units):{' '}
-                <span className="font-bold text-xl">$5000</span>
-              </div>
+          <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
+            <div className="text-sm">
+              Total ({productList.length || 0} requests/
+              {totalUnits(productList)} units):{' '}
+              <span className="font-bold text-xl">
+                ${totalPrice(productList).toFixed(2)}
+              </span>
             </div>
           </div>
-        )}
+
+          {/* <div className="py-2 text-center">No items added</div> */}
+        </div>
       </div>
     </div>
   )
 }
 
-const RequestedCard = ({ data: item, setActiveModal }) => {
+const RequestedProductProcessingCard = ({ data }) => {
   const [expanded, setExpanded] = useState(false)
+  const item = data.item || {}
   return (
     <div className="mt-2">
       <div className="flex items-stretch gap-2 mb-1 ">
         <div className="w-1/4 self-center">
-          <img src={'/pliers.jpg'} alt="" className="object-contain" />
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
         </div>
         <div className="w-3/4 flex flex-col">
           <div className="text-lg leading-5 line-clamp-2 flex-shrink-0">
@@ -315,22 +285,32 @@ const RequestedCard = ({ data: item, setActiveModal }) => {
           <div className="flex [&>div]:flex-1 gap-3">
             <div>
               <label className="text-xs font-bold">Requested Qty</label>
-              <div>25</div>
+              <div>{data.requested_quantity}</div>
             </div>
             <div>
               <label className="text-xs font-bold">Requested Price</label>
-              <div>$21.59</div>
+              <div>${data.requested_price.toFixed(2)}</div>
             </div>
           </div>
 
           <div className="flex [&>div]:flex-1 gap-3">
             <div>
               <label className="text-xs font-bold">Quoted Qty</label>
-              <div className='text-gray-500'>25</div>
+              <div className="text-gray-500">
+                {data.requested_quantity
+                  ? data.requested_quantity
+                  : data.quoted_quantity}
+              </div>
             </div>
             <div>
               <label className="text-xs font-bold">Quoted Price</label>
-              <div className='text-gray-500'>$21.59</div>
+              <div className="text-gray-500">
+                $
+                {(data.requested_price
+                  ? data.requested_price
+                  : data.quoted_price || 0
+                ).toFixed(2)}
+              </div>
             </div>
           </div>
         </div>

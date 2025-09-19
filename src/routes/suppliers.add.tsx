@@ -9,65 +9,24 @@ export const Route = createFileRoute('/suppliers/add')({
 })
 
 function RouteComponent() {
-  const [expanded, setExpanded] = useState(-1)
-  const [items, setItems] = useState([])
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+
+  const [expanded, setExpanded] = useState(-1)
+  const [items, setItems] = useState([])
 
   const { mutateAsync: createSupplier } = useMutation({
     mutationFn: addSupplierMutation,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
   })
-
-  const { mutateAsync: createManyItem } = useMutation({
+  const { mutateAsync: createItems } = useMutation({
     mutationFn: addItemMutation,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
   })
 
-  const handleAddSupplierWithItems = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = e.nativeEvent.submitter
-    btn.disabled = true
-    try {
-      const { id: supplierId } = await createSupplier({
-        name: form.elements['name']?.value,
-        barcode_qr: form.elements['barcode_qr']?.value,
-      })
-
-      if (!items.length) return
-      try {
-        const newItems = items
-          .filter(({ name }) => !!name)
-          .map((i) => ({
-            id: undefined,
-            supplier_id: supplierId,
-            short_name: i['name'],
-            sku_number: i['external_sku'],
-            internet_sku_number: i['internal_sku'],
-            item_desc: i['desc'],
-            item_price: parseFloat(i['price']),
-            item_image: i['image'],
-          }))
-
-        if (!newItems.length) return
-        await createManyItem(newItems)
-        navigate({ to: '/items' })
-        toast.success('Added supplier and items')
-      } catch (error) {
-        toast.error('Error adding items')
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error('Process failed')
-    } finally {
-      btn.disabled = false
-    }
-  }
-
+  const handleExpand = (id) => setExpanded(id == expanded ? -1 : id)
   const handleRemoveItem = (id) =>
     setItems((prev) => prev.filter((p) => p.id != id))
-  const handleExpand = (id) => setExpanded(id == expanded ? -1 : id)
   const handleFieldUpdate = ({ target }, id) => {
     const { name, value } = target
     setItems((prev) =>
@@ -80,6 +39,50 @@ function RouteComponent() {
             },
       ),
     )
+  }
+
+  const handleAddSupplierWithItems = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = e.nativeEvent.submitter
+    btn.disabled = true
+    try {
+      const { id: supplierId } = await createSupplier({
+        name: form.elements['name']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
+      })
+
+      if (!items.length) return navigate({ to: '/items' })
+      try {
+        const newItems = items
+          .filter(({ name }) => !!name)
+          .map((i) => ({
+            id: undefined,
+            supplier_id: supplierId,
+            short_name: i['name'],
+            sku_number: i['external_sku'],
+            internet_sku_number: i['internal_sku'],
+            item_desc: i['desc'],
+            item_price: parseFloat(i['price']),
+            item_image: i['image'],
+            order_threshold: i['threshold'],
+          }))
+
+        if (newItems.length) {
+          await createItems(newItems)
+        }
+        navigate({ to: '/items' })
+        toast.success('Added supplier and items')
+      } catch (error) {
+        console.log(error)
+        toast.error('Error adding items')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
   }
 
   return (
@@ -188,10 +191,10 @@ const NewSupplierItem = ({
           className="flex flex-col space-y-1"
         >
           <select name="image" className="form-control">
-            <option value="/warehouse.jpg">Test - Warehouse</option>
-            <option value="/pliers.jpg">Test - Pliers</option>
-            <option value="/wrench.jpg">Test - Wrench</option>
-            <option value="/drill.jpg">Test - Drill</option>
+            <option value="/warehouse.jpg">Warehouse (testing)</option>
+            <option value="/pliers.jpg">Pliers (testing)</option>
+            <option value="/wrench.jpg">Wrench (testing)</option>
+            <option value="/drill.jpg">Drill (testing)</option>
           </select>
 
           <input
@@ -225,6 +228,13 @@ const NewSupplierItem = ({
             name="price"
             type="number"
             placeholder="Price"
+            className="form-control"
+          />
+
+          <input
+            name="threshold"
+            type="number"
+            placeholder="Threshold"
             className="form-control"
           />
         </form>

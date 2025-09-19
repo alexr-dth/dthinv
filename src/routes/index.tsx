@@ -64,7 +64,7 @@ function App() {
         </Link>
 
         <Link to="/locations" className="btn w-full">
-          {t('Storage Locations')}
+          {t('Storage Locations')} <span className='text-xs text-red-500'>(*buggy)</span>
         </Link>
 
         <Link to="/" className="btn w-full disabled">

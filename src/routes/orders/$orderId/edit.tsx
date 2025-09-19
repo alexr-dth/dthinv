@@ -1,7 +1,11 @@
-import { fetchOrderById } from '@/api/api'
+import {
+  editOrderMutation,
+  editRequestMutation,
+  fetchOrderById,
+} from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createFileRoute,
   Link,
@@ -11,60 +15,76 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
-const sampleItem = {
-  sku_number: 856320,
-  internet_sku_number: 100124691,
-  item_price: 2.2,
-  inventory: -3,
-  short_name: '1" EMT Straps 4-Pack',
-}
-
 export const Route = createFileRoute('/orders/$orderId/edit')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const { orderId } = useParams({ from: '/orders/$orderId/edit' })
-  const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
 
+  // const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
+  // const [activeModal, setActiveModal] = useState<{
+  //   name: string
+  //   data?: any
+  // } | null>(null)
   const {
     data: order = {},
     isLoading,
     error,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ['orders', String(orderId)],
+    queryKey: ['orders', orderId],
     queryFn: () => fetchOrderById(orderId),
   })
-
-  const buildOrderSet = ({ items = [] }) => {
-    return Object.values(
-      items.reduce((acc, { supplier, ...rest }) => {
-        ;(acc[supplier.id] ??= { supplier, items: [] }).items.push(rest)
-        return acc
-      }, {}),
-    )
-  }
-
-  const orderSets = useMemo(() => buildOrderSet(order), [order, dataUpdatedAt])
+  const [requestedItems, setRequestedItems] = useState([])
+  useEffect(() => {
+    setRequestedItems(order.requested_items || [])
+  }, [dataUpdatedAt])
 
   useEffect(() => {
-    if (isLoading) return
-    if (Object.keys(order).length) return
-
+    if (isLoading || Object.keys(order).length) return
     toast.error('Order not found')
     navigate({ to: '/orders' })
   }, [isLoading, order, navigate])
 
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
-      0,
-    )
+  const { mutateAsync: patchOrder } = useMutation({
+    mutationFn: editOrderMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
+  })
 
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = e.nativeEvent.submitter
+    btn.disabled = true
+    try {
+      await patchOrder({
+        id: order.id,
+        name: form.elements['order_name']?.value,
+        notes: form.elements['order_notes']?.value,
+        supplier_tracking_id: form.elements['order_tracking_number']?.value,
+        status: form.elements['order_status']?.value,
+      })
+      toast.success('Order updated')
+
+      const asyncUpdateRequests = requestedItems.map((r) => {
+        return editRequestMutation({
+          id: r.id,
+          quoted_quantity: r.quoted_quantity,
+          quoted_price: r.quoted_price,
+        })
+      })
+      await Promise.all(asyncUpdateRequests)
+      toast.success('Items updated')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
 
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
@@ -87,28 +107,30 @@ function RouteComponent() {
 
         <h2 className="page-title">Edit Details</h2>
 
-        <div className="space-y-3">
+        <form
+          id="update-order-form"
+          onSubmit={handleUpdate}
+          className="space-y-3"
+        >
           <div>
             <span className="font-bold text-sm">Ordered by:</span> <br />
             <input
-              name="ordered_by"
               type="text"
               className="text-lg w-full pointer-events-none"
-              value={'Clark Kent'}
+              defaultValue={order.actor?.username || 'n/a'}
+              readOnly
             />
           </div>
 
           <div>
             <span className="font-bold text-sm">Date:</span> <br />
             <input
-              name="created_at"
               type="datetime-local"
               className="text-lg w-full pointer-events-none"
-              defaultValue={new Date(
-                Date.now() - new Date().getTimezoneOffset() * 60000,
-              )
-                .toISOString()
-                .slice(0, 16)}
+              value={new Date(order.created_at)
+                .toLocaleString('sv-SE')
+                .replace(' ', 'T')}
+              readOnly
             />
           </div>
 
@@ -118,8 +140,8 @@ function RouteComponent() {
               name="order_name"
               type="text"
               className="form-control-bare w-full text-lg"
-              placeholder="e.g. Warehouse Supplies Order"
-              defaultValue={'Additional supplies for Project DTH-101.'}
+              placeholder={`e.g. ${order.supplier.name} Order`}
+              defaultValue={order.name}
             />
           </div>
 
@@ -130,6 +152,7 @@ function RouteComponent() {
               className="form-control-bare w-full text-lg"
               rows={2}
               placeholder="Add remarks..."
+              defaultValue={order.notes}
             />
           </div>
 
@@ -137,55 +160,59 @@ function RouteComponent() {
             <span className="font-bold text-sm">Supplier Order Number:</span>{' '}
             <br />
             <input
+              name="order_tracking_number"
               type="text"
               className="form-control-bare w-full text-lg"
               placeholder="e.g. 123456789012"
-              defaultValue={'EXT-TRKNO-MISSING'}
+              defaultValue={order.supplier_tracking_id}
             />
           </div>
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
-            <select
-              name="orderStatus"
-              id="orderStatus"
-              className="form-control w-1/2"
-            >
-              <option value="awaitingQuote">Quote Requested</option>
-              <option value="awaitingDelivery">Awaiting Delivery</option>
-              <option value="fulfilled">Fulfilled</option>
-              <option value="canceled">Canceled</option>
+            <select name="order_status" className="form-control min-w-1/2">
+              <option value="await_quote">await_quote</option>
+              <option value="await_deliver">await_deliver</option>
+              <option value="fulfilled_complete">fulfilled_complete</option>
+              <option value="fulfilled_missing">fulfilled_missing</option>
             </select>
           </div>
-        </div>
+        </form>
 
         <div className="font-bold text-sm mt-10">Products included:</div>
         <div className="space-y-2">
-          <SupplierProductSet
-            set={{}}
-            supplierName={'Home Depot'}
-            setActiveModal={{}}
+          <SupplierProductSetWithPrice
+            supplier={order.supplier}
+            productList={requestedItems}
+            editRequestedItem={setRequestedItems}
           />
         </div>
 
-        <div className="border-t-8 text-end mt-5 pt-2 mb-10">
-        </div>
+        <div className="border-t-8 text-end mt-5 pt-2 mb-10"></div>
 
-        <button className="btn w-full">Update</button>
+        <button className="btn w-full" form="update-order-form">
+          Update
+        </button>
       </div>
     </>
   )
 }
 
-const SupplierProductSet = ({ set, supplierName, setActiveModal }) => {
+const SupplierProductSetWithPrice = ({
+  supplier,
+  productList,
+  editRequestedItem,
+}) => {
   const [expanded, setExpanded] = useState(true)
+
   const totalPrice = (items = []) =>
     items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
+      (sum, { requested_price: p = 0, requested_quantity: q }) => sum + p * q,
       0,
     )
+
   const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+    items.reduce((sum, { requested_quantity: q }) => sum + q, 0)
 
   return (
     <div>
@@ -195,39 +222,35 @@ const SupplierProductSet = ({ set, supplierName, setActiveModal }) => {
           // onClick={() => setExpanded(!expanded)}
         >
           <div>
-            <h5 className="text-lg font-semibold uppercase">{supplierName}</h5>
+            <h5 className="text-lg font-semibold uppercase">{supplier.name}</h5>
             {!expanded && (
-              <span className="text-sm text-gray-500">
-                $5000 <span className="text-xs">(20 types/30 units)</span>
+              <span className="text-xs text-gray-500">
+                ({productList.length || 0} request/s)
               </span>
             )}
           </div>
 
-          <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
+          {/* <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span> */}
         </h3>
 
         <div className={`px-2 pb-2 ${!expanded && `hidden`}`}>
           <ul className="space-y-2 divide-y divide-gray-400 pb-2">
-            <RequestedUpdateCard
-              data={sampleItem}
-              setActiveModal={setActiveModal}
-            />
-
-            <RequestedUpdateCard
-              data={sampleItem}
-              setActiveModal={setActiveModal}
-            />
-
-            <RequestedUpdateCard
-              data={sampleItem}
-              setActiveModal={setActiveModal}
-            />
+            {productList.map((item) => (
+              <RequestedProductUpdateCard
+                key={item.id}
+                data={item}
+                editRequestedItem={editRequestedItem}
+              />
+            ))}
           </ul>
 
           <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
             <div className="text-sm">
-              Total (2 types/10 units):{' '}
-              <span className="font-bold text-xl">$5000</span>
+              Total ({productList.length || 0} requests/
+              {totalUnits(productList)} units):{' '}
+              <span className="font-bold text-xl">
+                ${totalPrice(productList).toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
@@ -236,13 +259,18 @@ const SupplierProductSet = ({ set, supplierName, setActiveModal }) => {
   )
 }
 
-const RequestedUpdateCard = ({ data: item, setActiveModal }) => {
+const RequestedProductUpdateCard = ({ data, editRequestedItem }) => {
   const [expanded, setExpanded] = useState(false)
+  const item = data.item || {}
   return (
     <div className="mt-2">
       <div className="flex items-stretch gap-2 mb-1 ">
         <div className="w-1/4 self-center">
-          <img src={'/pliers.jpg'} alt="" className="object-contain" />
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
         </div>
         <div className="w-3/4 flex flex-col">
           <div className="text-lg leading-5 line-clamp-2 flex-shrink-0">
@@ -260,11 +288,11 @@ const RequestedUpdateCard = ({ data: item, setActiveModal }) => {
           <div className="flex [&>div]:flex-1 gap-3">
             <div>
               <label className="text-xs font-bold">Requested Qty</label>
-              <div>25</div>
+              <div>{data.requested_quantity}</div>
             </div>
             <div>
               <label className="text-xs font-bold">Requested Price</label>
-              <div>$21.59</div>
+              <div>${data.requested_price.toFixed(2)}</div>
             </div>
           </div>
 
@@ -274,7 +302,20 @@ const RequestedUpdateCard = ({ data: item, setActiveModal }) => {
               <input
                 type="number"
                 className="w-full text-lg ps-1 focus:outline-0 border-b"
-                defaultValue={25}
+                defaultValue={
+                  data.quoted_quantity
+                    ? data.quoted_quantity
+                    : data.requested_quantity
+                }
+                onChange={(e) =>
+                  editRequestedItem((prev) =>
+                    (prev || []).map((i) =>
+                      i.id !== data.id
+                        ? i
+                        : { ...i, quoted_quantity: e.target.value },
+                    ),
+                  )
+                }
               />
             </div>
             <div>
@@ -282,7 +323,20 @@ const RequestedUpdateCard = ({ data: item, setActiveModal }) => {
               <input
                 type="number"
                 className="w-full text-lg ps-1 focus:outline-0 border-b"
-                defaultValue={21.59}
+                defaultValue={
+                  data.quoted_price
+                    ? data.quoted_price
+                    : data.requested_price || 0
+                }
+                onChange={(e) =>
+                  editRequestedItem((prev) =>
+                    (prev || []).map((i) =>
+                      i.id !== data.id
+                        ? i
+                        : { ...i, quoted_price: e.target.value },
+                    ),
+                  )
+                }
               />
             </div>
           </div>

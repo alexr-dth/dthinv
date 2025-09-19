@@ -28,6 +28,10 @@ const depthColors = [
   'bg-gray-200 text-gray-900', // Level 10
 ]
 
+
+
+// TODO: location CRUD is functioning, only the sorting is buggy alaso search functionality not implement
+
 // Helper
 const buildTree = (data, parentId = '') => {
   return data
@@ -38,7 +42,8 @@ const buildTree = (data, parentId = '') => {
     }))
 }
 
-const sortOrder = (data) => data.sort((a, b) => a.order_weight - b.order_weight)
+const sortOrder = (data) =>
+  (data || []).sort((a, b) => a.order_weight - b.order_weight)
 
 // MAIN APP
 export const Route = createFileRoute('/locations/')({
@@ -46,14 +51,14 @@ export const Route = createFileRoute('/locations/')({
 })
 
 function RouteComponent() {
-  // Initial declaration for hooks
   const queryClient = useQueryClient()
+
+  const [expandedAll, setExpandedAll] = useState(false)
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
 
-  // React Query - for fetching data via api
   const {
     data: locations = [],
     isLoading,
@@ -62,32 +67,30 @@ function RouteComponent() {
   } = useQuery({
     queryKey: ['locations'],
     queryFn: fetchLocations,
-    select: (data) => sortOrder(buildTree(data)),
+    select: (fetched) => sortOrder(fetched),
   })
 
-  const [list, setList] = useState(locations)
+  const [list, setList] = useState([])
 
   useEffect(() => {
-    setList(() => locations)
+    setList(locations || [])
   }, [dataUpdatedAt])
 
-  // React Query - for mutating/updating data via api
   const { mutateAsync: createLocation } = useMutation({
     mutationFn: addLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries(['locations']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
   })
 
   const { mutateAsync: patchLocation } = useMutation({
     mutationFn: editLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries(['locations']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
   })
 
   const { mutateAsync: deleteLocation } = useMutation({
     mutationFn: removeLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries(['locations']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
   })
 
-  // Functions
   const closeModal = () => setActiveModal(null)
 
   const handleAddLocation = async (e) => {
@@ -102,12 +105,16 @@ function RouteComponent() {
         barcode_qr: form.elements['barcode_qr']?.value,
         description: form.elements['description']?.value,
         notes: form.elements['notes']?.value,
-        parentId: form.elements['parentId']?.value || '',
+        parent_id: form.elements['parentId']?.value || null,
         order_weight: Date.now(),
       }
       await createLocation(newLocation)
-    } finally {
       closeModal()
+      toast.success('Location created')
+    } catch (errror) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
       btn.disabled = false
     }
   }
@@ -118,17 +125,35 @@ function RouteComponent() {
     const btn = form.querySelector("button[type='submit']")
     btn.disabled = true
     try {
-      const newData = {
+      await patchLocation({
         id: form.elements['id']?.value,
         name: form.elements['name']?.value,
         barcode_qr: form.elements['barcode_qr']?.value,
         description: form.elements['description']?.value,
         notes: form.elements['notes']?.value,
-        parentId: form.elements['parentId']?.value,
-      }
-      await patchLocation(newData)
-    } finally {
+      })
       closeModal()
+      toast.success('Location updated')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
+  const handleRemoveLocation = async (e, id) => {
+    e.preventDefault()
+    const btn = e.target
+    btn.disabled = true
+    try {
+      await deleteLocation(id)
+      closeModal()
+      toast.success('Location deleted')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
       btn.disabled = false
     }
   }
@@ -172,28 +197,13 @@ function RouteComponent() {
     }
   }
 
-  const handleRemoveLocation = async (e, id) => {
-    e.preventDefault()
-    const btn = e.target
-    btn.disabled = true
-    try {
-      await deleteLocation(id)
-    } finally {
-      closeModal()
-      btn.disabled = false
-    }
-  }
-
-  const [expandedAll, setExpandedAll] = useState(false)
-  // UI/UX
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
-
   return (
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'addLocation' && (
               <AddLocationModal
                 cancelCallback={closeModal}
@@ -228,7 +238,7 @@ function RouteComponent() {
         </div>
       )}
 
-      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+      <div className="page-container">
         <div className="divide-x ">
           <Link to="/" className="action-link !ps-0">
             Home
@@ -263,7 +273,10 @@ function RouteComponent() {
         </div>
 
         {/* TODO: Change this component to something that will make sense in this context */}
-        <ItemSearchBarWithFilters />
+        <ItemSearchBarWithFilters
+          originalData={[]}
+          setFilteredData={() => {}}
+        />
 
         <ReactSortable
           className="space-y-3"
@@ -274,14 +287,14 @@ function RouteComponent() {
           onEnd={(evt) => handleOrderChange(evt, list)}
         >
           {list.map((node) => (
-            <TreeNode
+            <LocationNode
               key={node.id}
               node={node}
               setActiveModal={setActiveModal}
               handleOrderChange={handleOrderChange}
               handleRemoveLocation={handleRemoveLocation}
               expandedToggle={expandedAll}
-              className={node.children < 1 && 'mb-0.5'}
+              className={node.children?.length < 1 ? 'mb-0.5' : ''}
             />
           ))}
         </ReactSortable>
@@ -291,14 +304,14 @@ function RouteComponent() {
 }
 
 // ADDITIONAL COMPONENTS
-const TreeNode = ({
+const LocationNode = ({
   node,
   depth = 0,
   setActiveModal,
   handleOrderChange,
   handleRemoveLocation,
   expandedToggle,
-  className,
+  className = '',
 }) => {
   const [expanded, setExpanded] = useState(expandedToggle)
   const [optionExpanded, setOptionExpanded] = useState(false)
@@ -425,13 +438,14 @@ const TreeNode = ({
           onEnd={(evt) => handleOrderChange(evt, list)}
         >
           {sortOrder(list).map((child) => (
-            <TreeNode
+            <LocationNode
               key={child.id}
               node={child}
               depth={depth + 1}
               setActiveModal={setActiveModal}
+              handleOrderChange={handleOrderChange}
               expandedToggle={expandedToggle}
-              className={child.children.length < 1 && 'mb-0.5'}
+              className={child.children?.length < 1 ? 'mb-0.5' : ''}
             />
           ))}
         </ReactSortable>
@@ -487,62 +501,47 @@ const BarcodeModal = ({ data, cancelCallback }) => {
   )
 }
 
-const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
+const AddLocationModal = ({ saveCallback, cancelCallback }) => {
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold mb-3 text-xl">
-          Edit location information
-        </h3>
-        <input type="hidden" name="id" value={data?.id} />
-        <input type="hidden" name="parentId" value={data?.parentId || ''} />
-
-        <div className="flex flex-col gap-1">
+        <h3 className="font-semibold  mb-3 text-xl">Add location</h3>
+        <div className="flex flex-col gap-1 ">
+          <input type="hidden" name="parentId" />
           <input
-            type="text"
             name="name"
+            type="text"
             placeholder="Location name"
             className="w-full border rounded p-2"
-            defaultValue={data?.name || ''}
             required
           />
 
           <input
-            type="text"
             name="barcode_qr"
+            type="text"
             placeholder="QR Code"
             className="w-full border rounded p-2"
-            defaultValue={data?.barcode_qr || ''}
             required
           />
 
           <textarea
-            placeholder="Description"
             name="description"
+            placeholder="Description"
             className="w-full border rounded p-2"
-            defaultValue={data?.description || ''}
           />
 
           <textarea
-            placeholder="Notes"
             name="notes"
+            placeholder="Notes"
             className="w-full border rounded p-2"
-            defaultValue={data?.notes || ''}
           />
         </div>
 
         <div className="flex gap-2 mt-4">
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            onClick={cancelCallback}
-            type="button"
-          >
+          <button className="btn flex-1" onClick={cancelCallback} type="button">
             Close
           </button>
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            type="submit"
-          >
+          <button className="btn flex-1" type="submit">
             Save
           </button>
         </div>
@@ -560,7 +559,6 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
           <input type="hidden" name="parentId" value={data?.id} />
 
           <input
-            name="parent_code"
             type="text"
             className="w-full border rounded p-2 disabled:bg-gray-200 text-gray-500"
             value={data?.name + ' - under'}
@@ -597,17 +595,10 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            onClick={cancelCallback}
-            type="button"
-          >
+          <button className="btn flex-1" onClick={cancelCallback} type="button">
             Close
           </button>
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            type="submit"
-          >
+          <button className="btn flex-1" type="submit">
             Save
           </button>
         </div>
@@ -616,55 +607,55 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
   )
 }
 
-const AddLocationModal = ({ saveCallback, cancelCallback }) => {
+const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold  mb-3 text-xl">Add location</h3>
-        <div className="flex flex-col gap-1 ">
-          <input type="hidden" name="parentId" value={''} />
+        <h3 className="font-semibold mb-3 text-xl">
+          Edit location information
+        </h3>
+        <input type="hidden" name="id" value={data?.id} />
+        <input type="hidden" name="parentId" value={data?.parent_id} />
 
+        <div className="flex flex-col gap-1">
           <input
-            name="name"
             type="text"
+            name="name"
             placeholder="Location name"
             className="w-full border rounded p-2"
+            defaultValue={data?.name || ''}
             required
           />
 
           <input
-            name="barcode_qr"
             type="text"
+            name="barcode_qr"
             placeholder="QR Code"
             className="w-full border rounded p-2"
+            defaultValue={data?.barcode_qr || ''}
             required
           />
 
           <textarea
-            name="description"
             placeholder="Description"
+            name="description"
             className="w-full border rounded p-2"
+            defaultValue={data?.description || ''}
           />
 
           <textarea
-            name="notes"
             placeholder="Notes"
+            name="notes"
             className="w-full border rounded p-2"
+            defaultValue={data?.notes || ''}
           />
         </div>
 
         <div className="flex gap-2 mt-4">
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            onClick={cancelCallback}
-            type="button"
-          >
+          <button className="btn flex-1" onClick={cancelCallback} type="button">
             Close
           </button>
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            type="submit"
-          >
+          <button className="btn flex-1" type="submit">
             Save
           </button>
         </div>

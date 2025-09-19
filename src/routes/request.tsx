@@ -1,15 +1,10 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { LucideMenu, LucideScanBarcode } from 'lucide-react'
+import { LucideScanBarcode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-
-const sampleItem = {
-  sku_number: 856320,
-  internet_sku_number: 100124691,
-  item_price: 2.2,
-  inventory: -3,
-  short_name: '1" EMT Straps 4-Pack',
-}
+import { useTranslation } from 'react-i18next'
+import { addRequestMutation, showItem } from '@/api/api'
 
 export const Route = createFileRoute('/request')({
   component: RouteComponent,
@@ -54,45 +49,27 @@ function RouteComponent() {
   const closeModal = () => setActiveModal(null)
 
   const checkIfItemExist = async (e, value) => {
-    const vals = {}
-    if (e !== null) {
-      e.preventDefault()
-      const form = e.target
-      vals['btn'] = form.querySelector("button[type='submit']")
-      vals['field'] = form.querySelector("input[type='text']")
-      vals['btn'].disabled = true
-      vals['field'].disabled = true
-    }
+    e?.preventDefault()
+
+    const form = e?.target
+    const btn = form?.querySelector("button[type='submit']")
+    const field = form?.querySelector("input[type='text']")
+
+    btn && (btn.disabled = true)
+    field && (field.disabled = true)
 
     try {
-      const scannedCode =
-        vals['field']?.elements['item_barcode']?.value || value
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      if (scannedCode == sampleItem.sku_number) {
-        setActiveModal({ name: 'confirmScan', data: sampleItem })
-      } else {
+      const scannedCode = value || field?.value
+      const scannedData = await showItem(scannedCode)
+      setActiveModal({ name: 'confirmScan', data: scannedData })
+    } catch (error) {
+      console.log(error)
+      if (error.status?.toString().startsWith('4'))
         toast.error('Barcode not recognized')
-      }
+      else toast.error('Process failed')
     } finally {
-      if (e != null) {
-        vals['field'].disabled = false
-        vals['btn'].disabled = false
-      }
-    }
-  }
-
-  const addItemRequest = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector("button[type='submit']")
-    btn.disabled = true
-    try {
-      const itemScannedCode = form.elements['item_barcode']?.value
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      toast.success('Added item request')
-    } finally {
-      closeModal()
-      btn.disabled = false
+      btn && (btn.disabled = false)
+      field && (field.disabled = false)
     }
   }
 
@@ -104,19 +81,18 @@ function RouteComponent() {
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'manualSearch' && (
               <ManualSearchModal
                 confirmCallback={checkIfItemExist}
-                cancelCallback={closeModal}
+                closeModal={closeModal}
               />
             )}
 
             {activeModal.name == 'confirmScan' && (
               <ConfirmScanModal
                 data={activeModal?.data}
-                confirmCallback={addItemRequest}
-                cancelCallback={closeModal}
+                closeModal={closeModal}
               />
             )}
           </div>
@@ -146,7 +122,7 @@ function RouteComponent() {
         <div className="grid place-content-center flex-grow-1">
           <div></div>
 
-          <form onSubmit={checkIfItemExist} className="text-center">
+          <div className="text-center">
             <div className="flex justify-center">
               <LucideScanBarcode size={128} />
             </div>
@@ -154,23 +130,24 @@ function RouteComponent() {
               Scan the item now...
             </div>
             <button
-              type="button"
               className="action-link mt-3"
               onClick={() => setActiveModal({ name: 'manualSearch' })}
             >
               Manual
             </button>
 
-            <button
-              type="button"
+            {/* <button
               className="action-link !text-gray-400 underline block"
               onClick={() =>
-                setActiveModal({ name: 'confirmScan', data: sampleItem })
+                setActiveModal({
+                  name: 'confirmScan',
+                  data: '1d3f7680-f31f-45c7-aac4-fcf44e56aa19',
+                })
               }
             >
               Simulate scanned item
-            </button>
-          </form>
+            </button> */}
+          </div>
         </div>
       </div>
     </>
@@ -178,8 +155,7 @@ function RouteComponent() {
 }
 
 // MODALS
-
-const ManualSearchModal = ({ confirmCallback, cancelCallback }) => {
+const ManualSearchModal = ({ confirmCallback, closeModal }) => {
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={confirmCallback}>
@@ -194,7 +170,7 @@ const ManualSearchModal = ({ confirmCallback, cancelCallback }) => {
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button className="btn w-full" onClick={cancelCallback} type="button">
+          <button className="btn w-full" onClick={closeModal} type="button">
             Cancel
           </button>
           <button className="btn w-full" type="submit">
@@ -206,20 +182,53 @@ const ManualSearchModal = ({ confirmCallback, cancelCallback }) => {
   )
 }
 
-const ConfirmScanModal = ({ data, confirmCallback, cancelCallback }) => {
+const ConfirmScanModal = ({ data, closeModal }) => {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
+  const { mutateAsync: createRequest } = useMutation({
+    mutationFn: addRequestMutation,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['requested-items'] }),
+  })
+
+  const handleAddRequest = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = form.querySelector('button[type="submit"]')
+    btn.disabled = true
+    try {
+      await createRequest({
+        item_id: data.id,
+        requested_price: data.item_price,
+        requested_quantity: data.order_threshold,
+        type: 'manual',
+        request_status: 'pending',
+        requester_id: 'd847766a-c8ca-461b-abc3-c45b5a11e710', // John Doe
+      })
+      closeModal()
+      toast.success('Added request')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
   return (
     <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={confirmCallback}>
+      <form onSubmit={handleAddRequest}>
         <h3 className="font-semibold mb-3 text-xl">Confirm scan</h3>
         <div className="rounded border p-2 mx-auto">
           <img
-            src="missing.png"
+            src={data.item_image || '/missing.png'}
             alt=""
             className="object-contain aspect-square w-full"
           />
 
           <div className="text-sm text-gray-600 font-semibold truncate">
-            Home Depot
+            {data.supplier?.name}
           </div>
 
           <div className="text-xl leading-5 line-clamp-2 ">
@@ -243,7 +252,7 @@ const ConfirmScanModal = ({ data, confirmCallback, cancelCallback }) => {
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button className="btn flex-1" onClick={cancelCallback} type="button">
+          <button className="btn flex-1" onClick={closeModal} type="button">
             Cancel
           </button>
 

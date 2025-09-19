@@ -7,7 +7,7 @@ export default function ItemCard({ data, actions: Actions }) {
   return (
     <div className="rounded border p-2 h-full flex flex-col">
       <img
-        src={data?.image || 'missing.png'}
+        src={data?.item_image || '/missing.png'}
         alt=""
         className="w-full aspect-square object-cover mb-2"
       />
@@ -32,10 +32,15 @@ export default function ItemCard({ data, actions: Actions }) {
         <span className="font-semibold">{t('Onhand')}:</span>{' '}
         <span className="">{data.inventory || 0}</span>
       </div>
+      <div className="text-nowrap font-medium text-sm">
+        <span className="font-semibold">{t('Threshold')}:</span>{' '}
+        <span className="">{data.order_threshold || 0}</span>
+      </div>
 
       <div className="text-2xl font-bold text-gray-800">
         ${parseFloat(data.item_price || 0).toFixed(2)}
       </div>
+
       {/* ACTIONS */}
 
       <div>{Actions({ data: data })}</div>

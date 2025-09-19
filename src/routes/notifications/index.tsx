@@ -31,7 +31,7 @@ function RouteComponent() {
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'addLocation' && (
               <>
                 <div>Show Modal</div>

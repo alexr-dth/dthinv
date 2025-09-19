@@ -1,26 +1,36 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { LucideMenu } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { fetchRequestsFormatted } from '@/api/api'
+import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/requests/')({
   component: RouteComponent,
 })
 
-const requests = []
-
 function RouteComponent() {
+  const { t } = useTranslation()
+
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
 
-  const { t } = useTranslation()
+  const { data: requestedItems = [] } = useQuery({
+    queryKey: ['requested-items'],
+    queryFn: fetchRequestsFormatted,
+    select: (fetched) => {
+      // sort via date/label
+      return fetched.sort((a, b) => new Date(b.label) - new Date(a.label))
+    },
+  })
+
   return (
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {/* {activeModal.name == 'manualSearch' && (
               <ManualSearchModal
                 confirmCallback={checkIfItemExist}
@@ -58,44 +68,23 @@ function RouteComponent() {
         </div>
 
         <div className="space-y-8">
-          <div>
-            <TitleDivider title={'Today'} />
-            <div className="space-y-1">
-              <SupplierProductSetWithActions
-                set={{}}
-                supplierName="Home Depot"
-              />
-              <SupplierProductSetWithActions
-                set={{}}
-                supplierName="Hardware Resources"
-              />
-              <SupplierProductSetWithActions set={{}} supplierName="Amazon" />
+          {requestedItems.map((group, index) => (
+            <div>
+              <TitleDivider title={group.label} key={index} />
+              <div className="space-y-1">
+                {(group.suppliers || []).map((set, index) => (
+                  <SupplierProductSetWithActions
+                    key={index}
+                    supplier={set}
+                    requestedItems={set.requested_items}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <TitleDivider title={'Sept 12, 2025'} />
-            <div className="space-y-1">
-              <SupplierProductSetWithActions
-                set={{}}
-                supplierName="Hardware Resources"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="space-y-1">
-              <TitleDivider title={'Sept 11, 2025'} />
-            </div>
-          </div>
-
-          <div>
-            <div className="space-y-1">
-              <TitleDivider title={'Sept 10, 2025'} />
-            </div>
-          </div>
+          ))}
         </div>
 
-        <button className="action-link block mx-auto text-sm font-bold py-4">
+        <button className="action-link underline !text-gray-300 block mx-auto text-sm font-bold py-4">
           Load More...
         </button>
       </div>
@@ -103,133 +92,157 @@ function RouteComponent() {
   )
 }
 
-const TitleDivider = ({ title }) => {
+const TitleDivider = ({ title, mode = 'days' }) => {
+  const formatDaysAgo = (input) => {
+    const date = new Date(input)
+    if (isNaN(date)) return input // fallback if not a valid date
+
+    const now = new Date()
+    const diffMs = now - date
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 1) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 30) return `${diffDays} days ago`
+    if (diffDays < 60) return 'a month ago'
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
+    if (diffDays < 730) return 'a year ago'
+
+    return `${Math.floor(diffDays / 365)} years ago`
+  }
+
+  const displayText = mode === 'days' ? formatDaysAgo(title) : title
+
   return (
     <div className="mt-3 flex items-center flex-nowrap w-full text-blue-400">
       <div className="flex-grow border-t border-dashed"></div>
-      <span className="mx-4 ">{title}</span>
+      <span className="mx-4">{displayText}</span>
       <div className="flex-grow border-t border-dashed"></div>
     </div>
   )
 }
 
-const sampleItem = {
-  sku_number: 856320,
-  internet_sku_number: 100124691,
-  item_price: 2.2,
-  inventory: -3,
-  short_name: '1" EMT Straps 4-Pack',
-}
+const SupplierProductSetWithActions = ({ supplier, requestedItems }) => {
+  const navigate = useNavigate()
 
-const SupplierProductSetWithActions = ({ set, supplierName }) => {
   const [expanded, setExpanded] = useState(false)
   const [selectedAll, selectAll] = useState(false)
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
-      0,
-    )
 
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+  const [checkedArr, setCheckedArr] = useState([])
+
+  const handleProceedNewOrder = () => {
+    if (!checkedArr.length) return alert('No items selected')
+    navigate({
+      to: '/orders/new',
+      state: { checkedArrIds: checkedArr, supplier },
+    })
+  }
 
   return (
-    <div>
-      <div className="border rounded">
-        <h3
-          className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
-          onClick={() => setExpanded(!expanded)}
-        >
-          <div>
-            <h5 className="text-lg font-semibold uppercase">{supplierName}</h5>
-            {!expanded && (
-              <span className="text-sm text-gray-500">
-                $5000 <span className="text-xs">(20 types/30 units)</span>
-              </span>
+    <div className="border rounded cursor-pointer">
+      <h3
+        className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div>
+          <h5 className="text-lg font-semibold uppercase">{supplier.name}</h5>
+          {!expanded && (
+            <span className="text-xs text-gray-500">
+              ({requestedItems.length || 0} item/s)
+            </span>
+          )}
+        </div>
+
+        <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
+      </h3>
+
+      {expanded && (
+        <div className="px-2 pb-2">
+          <ul className="space-y-2 divide-y divide-gray-400 pb-2">
+            {(requestedItems || []).map((item) =>
+              item.request_status === 'processing' ? (
+                <ProcessingRequestedCard data={item} key={item.id} />
+              ) : item.request_status === 'complete' ? (
+                <CompletedRequestedCard data={item} key={item.id} />
+              ) : item.request_status === 'denied' ? (
+                <DeniedRequestedCard data={item} key={item.id} />
+              ) : (
+                <RequestedItemCard
+                  data={item}
+                  key={item.id}
+                  selected={checkedArr.includes(item.id)}
+                  setCheckedArr={setCheckedArr}
+                />
+              ),
             )}
-          </div>
 
-          <span className="ms-auto">{expanded ? '[-]' : '[+]'}</span>
-        </h3>
+            {/* <CompletedRequestedCard data={sampleItem} /> */}
+          </ul>
 
-        {expanded && (
-          <div className="px-2 pb-2">
-            <ul className="space-y-2 divide-y divide-gray-400 pb-2">
-              <PendingRequestedCard
-                data={sampleItem}
-                selected={selectedAll}
-                requestedBy="Manual Request"
-              />
-              <CompletedRequestedCard data={sampleItem} />
-              <PendingRequestedCard
-                data={sampleItem}
-                selected={selectedAll}
-                requestedBy="System Request"
-              />
+          <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
+            {/* <div className="text-sm">
+              Total (2 types/10 units):{' '}
+              <span className="font-bold text-xl">$5000</span>
+            </div> */}
 
-              {/* {set.items.map((item) => (
-              ))} */}
-            </ul>
-
-            <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
-              <div className="text-sm">
-                Total (2 types/10 units):{' '}
-                <span className="font-bold text-xl">$5000</span>
-              </div>
-
-              <div className="flex">
-                <button
-                  className="action-link text-xs"
-                  onClick={() => selectAll(false)}
-                >
-                  Select none
-                </button>
-                <button
-                  className="action-link text-xs"
-                  onClick={() => selectAll(true)}
-                >
-                  Select all
-                </button>
-                {/* <button className="action-link !text-lg font-bold ms-auto">
+            <div className="flex">
+              <button
+                className="action-link text-xs"
+                onClick={() => {
+                  selectAll(false)
+                  setCheckedArr([])
+                }}
+              >
+                Select none
+              </button>
+              <button
+                className="action-link text-xs"
+                onClick={() => {
+                  selectAll(true)
+                  setCheckedArr(() => {
+                    return requestedItems.map((item) => item.id)
+                  })
+                }}
+              >
+                Select all
+              </button>
+              {/* <button className="action-link !text-lg font-bold ms-auto">
                   Proceed→
                 </button> */}
-                <Link
-                  to="/orders/new"
-                  className="action-link !text-lg font-bold ms-auto"
-                >
-                  Proceed→
-                </Link>
-              </div>
+              <button
+                className="action-link !text-lg font-bold ms-auto"
+                onClick={handleProceedNewOrder}
+              >
+                Proceed→
+              </button>
             </div>
-
-            {/* <div className="py-2 text-center">No items added</div> */}
           </div>
-        )}
-      </div>
+
+          {/* <div className="py-2 text-center">No items added</div> */}
+        </div>
+      )}
     </div>
   )
 }
 
-const PendingRequestedCard = ({
-  data: item,
-  selected,
-  requestedBy = 'Manual Request',
-}) => {
+const RequestedItemCard = ({ data, selected: checked, setCheckedArr }) => {
   const [expanded, setExpanded] = useState(false)
-  const [checked, setChecked] = useState(false)
   const id = useId()
-  useEffect(() => {
-    setChecked(selected)
-  }, [selected])
-
+  const item = data.item
   return (
     <div className="mt-2">
       <div className="flex items-stretch gap-2 mb-1">
-        <label className="w-1/4" htmlFor={id}>
-          <img src={'/pliers.jpg'} alt="" className="object-contain" />
+        <label className="w-1/4 self-center" htmlFor={id}>
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
         </label>
         <label className="w-3/4 flex flex-col" htmlFor={id}>
-          <div className="font-bold text-xs text-gray-400">{requestedBy}</div>
+          <div className="font-bold text-xs text-gray-400 uppercase">
+            {data.type || 'n/a'}
+          </div>
           <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
             {item.short_name || 'n/a'}
           </div>
@@ -259,8 +272,12 @@ const PendingRequestedCard = ({
             className="h-5 aspect-square"
             id={id}
             checked={checked}
-            onChange={() => {
-              setChecked(!checked)
+            onChange={(e) => {
+              setCheckedArr((prev) => {
+                return !checked
+                  ? [...prev, data.id] // add
+                  : prev.filter((i) => i != data.id) // subtract
+              })
             }}
           />
         </div>
@@ -288,16 +305,22 @@ const PendingRequestedCard = ({
   )
 }
 
-const CompletedRequestedCard = ({ data: item }) => {
+const ProcessingRequestedCard = ({ data }) => {
   const [expanded, setExpanded] = useState(false)
+  const item = data.item
+
   return (
-    <div className="mt-2 border-green-600 border-s-5 rounded-tl-md rounded-bl-md">
+    <div className="mt-2   border-amber-400 border-s-5 rounded-tl-md rounded-bl-md">
       <div className="flex items-stretch gap-2 mb-1">
-        <div className="w-1/4">
-          <img src={'/pliers.jpg'} alt="" className="object-contain" />
+        <div className="w-1/4 self-center">
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
         </div>
         <div className="w-3/4 flex flex-col">
-          <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
+          <div className="text-sm line-clamp-2 flex-grow-1 flex-shrink-0">
             {item.short_name || 'n/a'}
           </div>
           <div className="flex items-center">
@@ -310,12 +333,136 @@ const CompletedRequestedCard = ({ data: item }) => {
                 {item?.internet_sku_number || 'n/a'}
               </div>
 
-              <div className="text-nowrap font-medium text-sm text-green-600">
+              <div className="text-nowrap font-bold tracking-widest text-sm text-amber-600">
+                PROCESSING
+              </div>
+            </div>
+
+            <div className="text-xs flex-1 text-end">
+              ${parseFloat(item.item_price || 0).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        className="text-xs  !text-gray-400 mx-auto block"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {expanded ? 'Less' : '•••'}
+      </button>
+
+      {expanded && (
+        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+          <div>
+            <span className="font-bold">Description: </span>
+            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+          </div>
+          <div>
+            <span className="font-bold">Notes: </span> n/a
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CompletedRequestedCard = ({ data }) => {
+  const [expanded, setExpanded] = useState(false)
+  const item = data.item
+
+  return (
+    <div className="mt-2 opacity-60   border-green-600 border-s-5 rounded-tl-md rounded-bl-md">
+      <div className="flex items-stretch gap-2 mb-1">
+        <div className="w-1/4 self-center">
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
+        </div>
+        <div className="w-3/4 flex flex-col">
+          <div className="text-sm line-clamp-2 flex-grow-1 flex-shrink-0">
+            {item.short_name || 'n/a'}
+          </div>
+          <div className="flex items-center">
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
+                {item.sku_number || 'n/a'}
+              </div>
+
+              <div className="text-xs text-gray-400 truncate">
+                {item?.internet_sku_number || 'n/a'}
+              </div>
+
+              <div className="text-nowrap font-bold tracking-widest text-sm text-green-600">
                 COMPLETED
               </div>
             </div>
 
-            <div className="flex-1 text-end">
+            <div className="text-xs flex-1 text-end">
+              ${parseFloat(item.item_price || 0).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        className="text-xs  !text-gray-400 mx-auto block"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {expanded ? 'Less' : '•••'}
+      </button>
+
+      {expanded && (
+        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+          <div>
+            <span className="font-bold">Description: </span>
+            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+          </div>
+          <div>
+            <span className="font-bold">Notes: </span> n/a
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const DeniedRequestedCard = ({ data }) => {
+  const [expanded, setExpanded] = useState(false)
+  const item = data.item
+
+  return (
+    <div className="mt-2 opacity-60   border-gray-400 border-s-5 rounded-tl-md rounded-bl-md">
+      <div className="flex items-stretch gap-2 mb-1">
+        <div className="w-1/4 self-center">
+          <img
+            src={item.item_image || '/missing.png'}
+            alt=""
+            className="object-contain"
+          />
+        </div>
+        <div className="w-3/4 flex flex-col">
+          <div className="text-sm line-clamp-2 flex-grow-1 flex-shrink-0">
+            {item.short_name || 'n/a'}
+          </div>
+          <div className="flex items-center">
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
+                {item.sku_number || 'n/a'}
+              </div>
+
+              <div className="text-xs text-gray-400 truncate">
+                {item?.internet_sku_number || 'n/a'}
+              </div>
+
+              <div className="text-nowrap font-bold tracking-widest text-sm text-gray-600">
+                DENIED
+              </div>
+            </div>
+
+            <div className="text-xs flex-1 text-end">
               ${parseFloat(item.item_price || 0).toFixed(2)}
             </div>
           </div>

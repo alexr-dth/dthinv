@@ -36,7 +36,7 @@ function RouteComponent() {
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg"></div>
+          <div className="w-dvw max-w-md"></div>
         </div>
       )}
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">

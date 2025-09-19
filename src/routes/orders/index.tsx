@@ -1,4 +1,8 @@
+import { fetchItems, fetchOrders } from '@/api/api'
+import ErrorScreen from '@/components/ErrorScreen'
 import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import PageLoader from '@/components/PageLoader'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideMenu } from 'lucide-react'
 import { useState } from 'react'
@@ -12,11 +16,23 @@ function RouteComponent() {
     name: string
     data?: any
   } | null>(null)
+
+  const {
+    data: orders = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['orders'],
+    queryFn: fetchOrders,
+  })
+
+  if (isLoading) return <PageLoader />
+  if (error) return <ErrorScreen error={error} />
   return (
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'editRequested' && <>Modal here</>}
           </div>
         </div>
@@ -52,12 +68,15 @@ function RouteComponent() {
           </button>
         </div>
 
-        <ItemSearchBarWithFilters />
+        <ItemSearchBarWithFilters
+          originalData={[]}
+          setFilteredData={() => {}}
+        />
 
-        <ul className="divide-y divide-gray-400">
-          <OrderSetCard data={{}} status={'approved'} />
-          <OrderSetCard data={{}} status={'pending-approval'} />
-          <OrderSetCard data={{}} status={'open-order'} />
+        <ul className="divide-y-2 divide-gray-400">
+          {orders.map((order) => (
+            <OrderSetCard data={order} status={'approved'} />
+          ))}
         </ul>
       </div>
     </>
@@ -80,23 +99,23 @@ const OrderSetCard = ({ data: order, status }) => {
     <li className="flex items-start gap-2 min-h-30 overflow-visible py-4">
       <div className="truncate self-stretch flex flex-col justify-between flex-1">
         <div className="flex-1/4 text-xs flex">
-          <span className="font-bold me-2 truncate ">{'Home Depot'}</span>
+          <span className="font-bold me-2 truncate ">
+            {order.supplier?.name || 'n/a'}
+          </span>
           <span className="text-gray-500 truncate flex-shrink-0 flex-1/3">
-            {'EXT-TRKNO-MISSING'}
+            {order.supplier_tracking_id || 'NO-SUPPLIER-TRACKING-ID'}
           </span>
         </div>
         <div className="text-wrap line-clamp-2 text-lg leading-5 pb-2 mb-2">
-          {
-            'Additional supplies for Project DTH-101. This additional details and more details'
-          }
+          {order.name || 'n/a'}
         </div>
         <div className="flex-1/4 mb-1 text-sm">
           <Link
             to="/orders/$orderId"
-            params={{ orderId: 101 }}
+            params={{ orderId: order.id }}
             className="underline text-blue-500"
           >
-            #{'INT-TRKNO-MISSING'}
+            #{order.id || 'NO-INTERNAL-TRACKING-YET'}
           </Link>
         </div>
         <div className="flex-1/4 text-sm flex items-center justify-between gap-1">
@@ -126,7 +145,7 @@ const OrderSetCard = ({ data: order, status }) => {
               <Link
                 className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 to="/orders/$orderId/edit"
-                params={{ orderId: 101 }}
+                params={{ orderId: order.id }}
               >
                 Update Order
               </Link>

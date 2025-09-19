@@ -26,36 +26,37 @@ export const Route = createFileRoute('/items/')({
 function RouteComponent() {
   const { t } = useTranslation()
 
-  const [mode, setMode] = useState('items')
-  const [filteredData, setFilteredData] = useState([])
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
+  const [mode, setMode] = useState('items')
+  const [filteredData, setFilteredData] = useState([])
 
-  // React Query - for fetching data via api
   const {
     data: items = [],
     isLoading,
     error,
+    dataUpdatedAt,
   } = useQuery({
     queryKey: ['items'],
     queryFn: fetchItems,
   })
 
-  // FOR PREFETCHING TO AVOID DOWNTIME
   useQuery({
     queryKey: ['suppliers'],
     queryFn: fetchSuppliers,
   })
 
-  const closeModal = () => setActiveModal(null)
+  useEffect(() => {
+    setFilteredData(items)
+  }, [dataUpdatedAt])
 
-  // DISABLE SCROLLING
   useEffect(() => {
     document.body.style.overflow = activeModal?.name ? 'hidden' : 'auto'
   }, [activeModal])
 
+  const closeModal = () => setActiveModal(null)
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
   return (
@@ -63,19 +64,19 @@ function RouteComponent() {
       {/* START MODAL */}
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'addItem' && (
               <AddItemModal closeModal={closeModal} />
             )}
 
             {activeModal.name == 'editItem' && (
-              <EditItemModal data={activeModal.data} closeModal={closeModal} />
+              <EditItemModal closeModal={closeModal} data={activeModal.data} />
             )}
           </div>
         </div>
       )}
-      {/* END MODAL */}
 
+      {/* END MODAL */}
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
         <div className="flex justify-between">
           <div className="divide-x ">
@@ -89,10 +90,6 @@ function RouteComponent() {
               {t('Back')}
             </button>
           </div>
-
-          {/* <button className="action-link">
-            Save
-          </button> */}
         </div>
 
         <h2 className="page-title">{t('Item Catalogue')}</h2>
@@ -184,6 +181,7 @@ const AddItemModal = ({ closeModal }) => {
         item_desc: form.elements['desc']?.value,
         item_price: parseFloat(form.elements['price']?.value),
         item_image: form.elements['image']?.value,
+        order_threshold: form.elements['threshold']?.value,
       })
       closeModal()
       toast.success('Added item')
@@ -225,7 +223,7 @@ const AddItemModal = ({ closeModal }) => {
     <>
       {newSupplierModal && (
         <div className="fixed w-full h-full  bg-black/60 top-0 left-0 place-content-center grid z-200">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             <div className="bg-white rounded p-3 mx-3">
               <h3 className="font-semibold  mb-3 text-xl">
                 Enter supplier name:
@@ -315,10 +313,9 @@ const AddItemModal = ({ closeModal }) => {
                     className="form-control w-full"
                     readOnly
                   />
-
                   <input
                     name="supplier_id"
-                    type="text"
+                    type="hidden"
                     placeholder="Supplier"
                     defaultValue={selectedSupplier.id}
                     className="form-control w-full"
@@ -327,10 +324,10 @@ const AddItemModal = ({ closeModal }) => {
                 </div>
 
                 <select name="image" className="form-control">
-                  <option value="/warehouse.jpg">Test - Warehouse</option>
-                  <option value="/pliers.jpg">Test - Pliers</option>
-                  <option value="/wrench.jpg">Test - Wrench</option>
-                  <option value="/drill.jpg">Test - Drill</option>
+                  <option value="/warehouse.jpg">Warehouse (test)</option>
+                  <option value="/pliers.jpg">Pliers (test)</option>
+                  <option value="/wrench.jpg">Wrench (test)</option>
+                  <option value="/drill.jpg">Drill (test)</option>
                 </select>
 
                 {/*                 
@@ -373,12 +370,12 @@ const AddItemModal = ({ closeModal }) => {
                   placeholder="Price"
                   className="form-control"
                 />
-                {/* <input
-                  name="stocks"
+                <input
+                  name="threshold"
                   type="number"
-                  placeholder="Stocks"
+                  placeholder="(e.g. 10, 20, 30...)"
                   className="form-control"
-                /> */}
+                />
               </div>
 
               <div className="flex gap-2 mt-4">
@@ -430,6 +427,7 @@ const EditItemModal = ({ data, closeModal }) => {
         internet_sku_number: form.elements['internal_sku']?.value,
         item_desc: form.elements['desc']?.value,
         item_price: parseFloat(form.elements['price']?.value),
+        order_threshold: parseFloat(form.elements['threshold']?.value),
       })
       // closeModal()
       toast.success('Update success')
@@ -478,12 +476,24 @@ const EditItemModal = ({ data, closeModal }) => {
         <div className="space-y-1 max-h-[75lvh] overflow-auto p-2 border-y border-gray-400">
           <input type="hidden" name="id" value={data?.id} />
           <label className="mb-0 text-xs italic">Display image</label>
-          <input
+
+          <select
+            name="image"
+            className="form-control w-full"
+            defaultValue={data.item_image}
+          >
+            <option value="/warehouse.jpg">Warehouse (testing)</option>
+            <option value="/pliers.jpg">Pliers (test)</option>
+            <option value="/wrench.jpg">Wrench (test)</option>
+            <option value="/drill.jpg">Drill (test)</option>
+          </select>
+
+          {/* <input
             type="file"
             name="image"
             accept="image/*"
             className="form-control w-full"
-          />
+          /> */}
 
           <label className="mb-0 text-xs italic">Item name</label>
           <input
@@ -538,11 +548,19 @@ const EditItemModal = ({ data, closeModal }) => {
           />
           <label className="mb-0 text-xs italic">Onhand</label>
           <input
-            name="stocks"
+            type="text"
+            defaultValue={"*inventory across all locations, can't edit."}
+            className="form-control w-full"
+            readOnly
+          />
+
+          <label className="mb-0 text-xs italic">Threshold</label>
+          <input
+            name="threshold"
             type="number"
-            placeholder="100"
-            defaultValue={data?.inventory}
-            className="w-full border rounded p-2"
+            placeholder="(e.g. 10, 20, 30...)"
+            defaultValue={data?.order_threshold}
+            className="w-full form-control"
           />
         </div>
 

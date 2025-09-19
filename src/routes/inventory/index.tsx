@@ -63,7 +63,7 @@ function RouteComponent() {
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-lg">
+          <div className="w-dvw max-w-md">
             {activeModal.name == 'editItem' && (
               <EditItemModal
                 data={activeModal.data}
@@ -76,6 +76,7 @@ function RouteComponent() {
       )}
 
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+        <div className='text-center font-bold rounded bg-red-50 text-red-900 border text-lg py-2 my-2'>UI MOCKUP ONLY</div>
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
