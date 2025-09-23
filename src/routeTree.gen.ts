@@ -26,6 +26,7 @@ import { Route as OrdersNewRouteImport } from './routes/orders/new'
 import { Route as OrdersOrderIdIndexRouteImport } from './routes/orders/$orderId/index'
 import { Route as OrdersOrderIdEditRouteImport } from './routes/orders/$orderId/edit'
 import { Route as LocationsLocationIdItemsRouteImport } from './routes/locations/$locationId.items'
+import { Route as ItemsItemIdEditRouteImport } from './routes/items/$itemId.edit'
 
 const RequestRoute = RequestRouteImport.update({
   id: '/request',
@@ -113,6 +114,11 @@ const LocationsLocationIdItemsRoute =
     path: '/locations/$locationId/items',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ItemsItemIdEditRoute = ItemsItemIdEditRouteImport.update({
+  id: '/items/$itemId/edit',
+  path: '/items/$itemId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/requests': typeof RequestsIndexRoute
+  '/items/$itemId/edit': typeof ItemsItemIdEditRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
   '/orders/$orderId': typeof OrdersOrderIdIndexRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/requests': typeof RequestsIndexRoute
+  '/items/$itemId/edit': typeof ItemsItemIdEditRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
   '/orders/$orderId': typeof OrdersOrderIdIndexRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/notifications/': typeof NotificationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/requests/': typeof RequestsIndexRoute
+  '/items/$itemId/edit': typeof ItemsItemIdEditRoute
   '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
   '/orders/$orderId/': typeof OrdersOrderIdIndexRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/orders'
     | '/requests'
+    | '/items/$itemId/edit'
     | '/locations/$locationId/items'
     | '/orders/$orderId/edit'
     | '/orders/$orderId'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/orders'
     | '/requests'
+    | '/items/$itemId/edit'
     | '/locations/$locationId/items'
     | '/orders/$orderId/edit'
     | '/orders/$orderId'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/notifications/'
     | '/orders/'
     | '/requests/'
+    | '/items/$itemId/edit'
     | '/locations/$locationId/items'
     | '/orders/$orderId/edit'
     | '/orders/$orderId/'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   NotificationsIndexRoute: typeof NotificationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   RequestsIndexRoute: typeof RequestsIndexRoute
+  ItemsItemIdEditRoute: typeof ItemsItemIdEditRoute
   LocationsLocationIdItemsRoute: typeof LocationsLocationIdItemsRoute
   OrdersOrderIdEditRoute: typeof OrdersOrderIdEditRoute
   OrdersOrderIdIndexRoute: typeof OrdersOrderIdIndexRoute
@@ -373,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationsLocationIdItemsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/items/$itemId/edit': {
+      id: '/items/$itemId/edit'
+      path: '/items/$itemId/edit'
+      fullPath: '/items/$itemId/edit'
+      preLoaderRoute: typeof ItemsItemIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsIndexRoute: NotificationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   RequestsIndexRoute: RequestsIndexRoute,
+  ItemsItemIdEditRoute: ItemsItemIdEditRoute,
   LocationsLocationIdItemsRoute: LocationsLocationIdItemsRoute,
   OrdersOrderIdEditRoute: OrdersOrderIdEditRoute,
   OrdersOrderIdIndexRoute: OrdersOrderIdIndexRoute,

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "json-server": "json-server --watch db.json --port 5011",
-    "dev": "concurrently \"vite --port 5010\" \"json-server --watch db.json --port 5011\"",
+    "dev": "vite --port 5010",
+    "combine": "echo 'BEGIN;' > supabase/combined.sql && cat supabase/migrations/* >> supabase/combined.sql && echo 'COMMIT;' >> supabase/combined.sql",
     "start": "vite --port 5010",
     "build": "vite build --mode production",
     "serve": "vite preview",

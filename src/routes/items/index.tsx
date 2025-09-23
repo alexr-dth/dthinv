@@ -123,14 +123,21 @@ function RouteComponent() {
                 data={item}
                 actions={({ data }) => (
                   <div className="flex justify-end">
-                    <button
+                    {/* <button
                       className="action-link text-end text-sm"
                       onClick={() =>
                         setActiveModal({ name: 'editItem', data: data })
                       }
                     >
                       {t('Update')}
-                    </button>
+                    </button> */}
+                    <Link
+                      className="action-link text-end text-sm"
+                      to="/items/$itemId/edit"
+                      params={{ itemId: item.id }}
+                    >
+                      Edit
+                    </Link>
                   </div>
                 )}
               />

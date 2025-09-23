@@ -30,15 +30,24 @@ input[type='text'].form-control,
 input[type='search'].form-control,
 input[type='number'].form-control,
 input[type='password'].form-control {
-  @apply border rounded p-2 read-only:bg-gray-200 read-only:text-gray-500 read-only:cursor-not-allowed disabled:bg-gray-200 disabled:cursor-not-allowed;
+  @apply border rounded p-2 cursor-pointer read-only:bg-gray-200 read-only:text-gray-500 read-only:cursor-not-allowed disabled:bg-gray-200 disabled:cursor-not-allowed;
+}
+
+select.form-control,
+textarea.form-control {
+  @apply border rounded p-2 cursor-pointer;
 }
 
 input[type='text'].form-control-bare,
 input[type='search'].form-control-bare,
 input[type='number'].form-control-bare,
-input[type='password'].form-control-bare,
+input[type='password'].form-control-bare {
+  @apply border-b px-2  focus:outline-0 read-only:bg-gray-200 read-only:text-gray-500 read-only:cursor-not-allowed rounded-t-sm;
+}
+
+select.form-control-bare,
 textarea.form-control-bare {
-  @apply border-b focus:outline-0 field-sizing-content resize-none;
+  @apply border-b px-2  focus:outline-0 field-sizing-content resize-none;
 }
 
 input[type='text'].form-control.required,
@@ -47,11 +56,6 @@ input[type='number'].form-control.required,
 select.form-control.required,
 textarea.form-control.required {
   @apply placeholder-shown:border-blue-500 placeholder-shown:focus:outline-blue-500;
-}
-
-select.form-control,
-textarea.form-control {
-  @apply border rounded p-2 cursor-pointer;
 }
 
 input[type='file'].form-control {
