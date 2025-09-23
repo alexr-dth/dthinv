@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next'
 
-export default function ItemCard({ data, actions: Actions }) {
+export default function ItemCard({ data = {}, actions: Actions }) {
   const { t } = useTranslation()
   return (
     <div className="rounded border p-2 h-full flex flex-col">

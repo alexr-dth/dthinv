@@ -1,7 +1,7 @@
-import { fetchLocations, fetchSuppliers, showItem } from '@/api/api'
+import { fetchItems, fetchLocations, fetchSuppliers, showItem } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/items/$itemId/edit')({
@@ -10,6 +10,13 @@ export const Route = createFileRoute('/items/$itemId/edit')({
 
 function RouteComponent() {
   const { itemId } = useParams({ from: '/items/$itemId/edit' })
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['items'],
+      queryFn: fetchItems,
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+    })
 
   const [
     { data: itemData = {}, isLoading: isItemLoading, error: itemError },

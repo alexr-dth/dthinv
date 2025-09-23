@@ -9,6 +9,7 @@ import {
   addSupplierMutation,
   editItemMutation,
   fetchItems,
+  fetchPaginatedItems,
   fetchSuppliers,
   removeItemMutation,
 } from '@/api/api'
@@ -17,6 +18,7 @@ import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
 import ItemCard from '@/components/Cards/ItemCard'
 import ErrorScreen from '@/components/ErrorScreen'
+import usePaginatedQuery from '@/hooks/usePaginatedQuery'
 
 // MAIN APP
 export const Route = createFileRoute('/items/')({
@@ -34,14 +36,15 @@ function RouteComponent() {
   const [filteredData, setFilteredData] = useState([])
 
   const {
-    data: items = [],
+    data = {},
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
     isLoading,
     error,
     dataUpdatedAt,
-  } = useQuery({
-    queryKey: ['items'],
-    queryFn: fetchItems,
-  })
+  } = usePaginatedQuery({ queryKey: ['items'], queryFn: fetchPaginatedItems })
+  const { data: itemsData = [], totalCount } = data
 
   useQuery({
     queryKey: ['suppliers'],
@@ -49,7 +52,7 @@ function RouteComponent() {
   })
 
   useEffect(() => {
-    setFilteredData(items)
+    setFilteredData(itemsData)
   }, [dataUpdatedAt])
 
   useEffect(() => {
@@ -111,15 +114,15 @@ function RouteComponent() {
         </div>
 
         <ItemSearchBarWithFilters
-          originalData={items}
+          originalData={itemsData}
           setFilteredData={setFilteredData}
         />
 
         {mode === 'items' && (
           <div className="grid grid-cols-2 gap-2">
-            {filteredData.map((item) => (
+            {filteredData?.map((item) => (
               <ItemCard
-                key={item.id}
+                key={item?.id}
                 data={item}
                 actions={({ data }) => (
                   <div className="flex justify-end">
@@ -134,7 +137,7 @@ function RouteComponent() {
                     <Link
                       className="action-link text-end text-sm"
                       to="/items/$itemId/edit"
-                      params={{ itemId: item.id }}
+                      params={{ itemId: item?.id }}
                     >
                       Edit
                     </Link>
@@ -145,9 +148,20 @@ function RouteComponent() {
           </div>
         )}
 
-        {/* <button className="action-link block mx-auto text-sm font-bold py-4">
-          Load More...
-        </button> */}
+        <div className="mt-5 text-center mb-5">
+          <div className="text-xs mb-4 font-light text-gray-400">
+            Showing {filteredData.length} of {totalCount} items
+          </div>
+          {hasNextPage && (
+            <button
+              className="action-link"
+              disabled={isFetching}
+              onClick={() => fetchNextPage()}
+            >
+              Load More...
+            </button>
+          )}
+        </div>
       </div>
     </>
   )

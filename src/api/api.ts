@@ -2,6 +2,7 @@ import axios from 'axios'
 
 // const BASE_API = import.meta.env.VITE_JSON_SERVER_URL
 const BASE_API = import.meta.env.VITE_API_SERVER_URL
+const PAGE_SIZE = import.meta.env.VITE_PAGE_SIZE
 
 export const authUser = {
   username: 'Alex',
@@ -13,6 +14,20 @@ export const fetchItems = async () => {
   const { data } = await axios.get(BASE_API + '/items')
   return data
 }
+
+export const fetchPaginatedItems = async ({ pageParam = 1 }) => {
+  const res = await axios.get(
+    BASE_API + `/items?page=${pageParam}&limit=${PAGE_SIZE}`,
+  )
+  console.log('Fetch page: ', pageParam)
+  return {
+    data: res.data,
+    totalCount: Number(res.headers['x-total-count']),
+    pageSize: res.data.length,
+    pageParam: pageParam,
+  }
+}
+
 export const showItem = async (id) => {
   const { data } = await axios.get(BASE_API + `/items/${id}`)
   return data

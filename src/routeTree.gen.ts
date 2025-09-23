@@ -23,6 +23,7 @@ import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
+import { Route as DevInfiniteRouteImport } from './routes/dev/infinite'
 import { Route as OrdersOrderIdIndexRouteImport } from './routes/orders/$orderId/index'
 import { Route as OrdersOrderIdEditRouteImport } from './routes/orders/$orderId/edit'
 import { Route as LocationsLocationIdItemsRouteImport } from './routes/locations/$locationId.items'
@@ -98,6 +99,11 @@ const OrdersNewRoute = OrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevInfiniteRoute = DevInfiniteRouteImport.update({
+  id: '/dev/infinite',
+  path: '/dev/infinite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersOrderIdIndexRoute = OrdersOrderIdIndexRouteImport.update({
   id: '/orders/$orderId/',
   path: '/orders/$orderId/',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
+  '/dev/infinite': typeof DevInfiniteRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
+  '/dev/infinite': typeof DevInfiniteRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
+  '/dev/infinite': typeof DevInfiniteRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/receive'
     | '/request'
+    | '/dev/infinite'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/receive'
     | '/request'
+    | '/dev/infinite'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/receive'
     | '/request'
+    | '/dev/infinite'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -250,6 +262,7 @@ export interface RootRouteChildren {
   PdfRoute: typeof PdfRoute
   ReceiveRoute: typeof ReceiveRoute
   RequestRoute: typeof RequestRoute
+  DevInfiniteRoute: typeof DevInfiniteRoute
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
   SuppliersAddRoute: typeof SuppliersAddRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/infinite': {
+      id: '/dev/infinite'
+      path: '/dev/infinite'
+      fullPath: '/dev/infinite'
+      preLoaderRoute: typeof DevInfiniteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/$orderId/': {
       id: '/orders/$orderId/'
       path: '/orders/$orderId'
@@ -402,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   PdfRoute: PdfRoute,
   ReceiveRoute: ReceiveRoute,
   RequestRoute: RequestRoute,
+  DevInfiniteRoute: DevInfiniteRoute,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
   SuppliersAddRoute: SuppliersAddRoute,

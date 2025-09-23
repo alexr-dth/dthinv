@@ -104,3 +104,11 @@ input[type='checkbox'] + label {
 .page-container {
   @apply sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3 min-h-[100lvh];
 }
+
+i.page-notes {
+  @apply block !not-italic text-sm text-red-500 py-2 border-b-1;
+}
+
+i.page-notes::before {
+  content: '*';
+}
