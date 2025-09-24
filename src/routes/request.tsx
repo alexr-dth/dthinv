@@ -1,10 +1,18 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { LucideScanBarcode } from 'lucide-react'
+import { Flag, LucideScanBarcode } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
-import { addRequestMutation, showItem } from '@/api/api'
+import {
+  addRequestMutation,
+  fetchItems,
+  fetchPaginatedItems,
+  showItem,
+} from '@/api/api'
+import GridItemCard from '@/components/Cards/GridItemCard'
+import usePaginatedQuery from '@/hooks/usePaginatedQuery'
+import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 
 export const Route = createFileRoute('/request')({
   component: RouteComponent,
@@ -48,9 +56,8 @@ function RouteComponent() {
 
   const closeModal = () => setActiveModal(null)
 
-  const checkIfItemExist = async (e, value) => {
+  const checkIfItemExist = async (e, manualValue) => {
     e?.preventDefault()
-
     const form = e?.target
     const btn = form?.querySelector("button[type='submit']")
     const field = form?.querySelector("input[type='text']")
@@ -59,8 +66,12 @@ function RouteComponent() {
     field && (field.disabled = true)
 
     try {
-      const scannedCode = value || field?.value
+      const formValue = field?.value || null
+
+      const scannedCode = manualValue || formValue
       const scannedData = await showItem(scannedCode)
+
+      // don't cache the data, it's better to always check
       setActiveModal({ name: 'confirmScan', data: scannedData })
     } catch (error) {
       console.log(error)
@@ -115,6 +126,12 @@ function RouteComponent() {
           {/* <button className="action-link">
             Save
           </button> */}
+          <button
+            className="action-link"
+            onClick={() => setActiveModal({ name: 'manualSearch' })}
+          >
+            Manual
+          </button>
         </div>
 
         <h2 className="page-title">Request Items</h2>
@@ -127,22 +144,13 @@ function RouteComponent() {
               <LucideScanBarcode size={128} />
             </div>
             <div className="text-gray-400 italic text-lg">
-              Scan the item now...
+              Scan the barcode now...
             </div>
-            <button
-              className="action-link mt-3"
-              onClick={() => setActiveModal({ name: 'manualSearch' })}
-            >
-              Manual
-            </button>
 
             {/* <button
               className="action-link !text-gray-400 underline block"
-              onClick={() =>
-                setActiveModal({
-                  name: 'confirmScan',
-                  data: '1d3f7680-f31f-45c7-aac4-fcf44e56aa19',
-                })
+              onClick={(e) =>
+                checkIfItemExist(e, '023187f4-fcf2-4c9d-a57e-d619f87109ef')
               }
             >
               Simulate scanned item
@@ -156,29 +164,125 @@ function RouteComponent() {
 
 // MODALS
 const ManualSearchModal = ({ confirmCallback, closeModal }) => {
-  return (
-    <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={confirmCallback}>
-        <h3 className="font-semibold mb-3 text-xl">Manual search</h3>
-        <div className="flex flex-col gap-1">
-          <input
-            name="item_barcode"
-            type="text"
-            placeholder="Type item code..."
-            className="form-control"
-          />
-        </div>
+  const { t } = useTranslation()
+  const [newSupplierModal, openSupplierModal] = useState(false)
+  const [filteredData, setFilteredData] = useState([])
 
-        <div className="flex justify-end gap-2 mt-4">
-          <button className="btn w-full" onClick={closeModal} type="button">
-            Cancel
-          </button>
-          <button className="btn w-full" type="submit">
-            Confirm
-          </button>
+  const {
+    data = {},
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isLoading,
+    error,
+    dataUpdatedAt,
+  } = usePaginatedQuery({
+    queryKey: ['items'],
+    queryFn: fetchPaginatedItems,
+    enabled: newSupplierModal,
+  })
+
+  const itemsData = data?.items ?? []
+  const totalCount = data?.totalCount ?? 0
+
+  useEffect(() => {
+    setFilteredData(itemsData)
+  }, [dataUpdatedAt])
+
+  return (
+    <>
+      {newSupplierModal && (
+        <div className="fixed w-full h-full  bg-black/60 top-0 left-0 place-content-center grid z-200">
+          <div className="w-dvw max-w-md">
+            <div className="bg-white rounded p-3 mx-3 max-h-[95lvh] overflow-auto">
+              <div className="flex justify-between items-center">
+                <h3 className="modal-title">All items</h3>
+              </div>
+              <ItemSearchBarWithFilters
+                originalData={itemsData}
+                setFilteredData={setFilteredData}
+              />
+              <div className="space-y-8 max-h-[60lvh] overflow-auto py-4 border-y border-gray-400 px-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredData?.map((item, index) => (
+                    <GridItemCard
+                      key={item.id || index}
+                      data={item}
+                      actions={{
+                        primary: {
+                          cb: () => {
+                            openSupplierModal(false)
+                            confirmCallback(null, item.id)
+                          },
+                          label: 'Select',
+                        },
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="mt-5 text-center mb-5">
+                  <div className="text-xs mb-4 font-light text-gray-400">
+                    Showing {filteredData.length} of {totalCount} items
+                  </div>
+                  {hasNextPage && (
+                    <button
+                      className="action-link"
+                      disabled={isFetching}
+                      onClick={() => fetchNextPage()}
+                    >
+                      Load More...
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  className="btn flex-1"
+                  onClick={() => openSupplierModal(false)}
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
+      )}
+
+      <div className="bg-white rounded p-3 mx-3">
+        <form onSubmit={confirmCallback}>
+          <div className="flex mb-3">
+            <h3 className="modal-title">Manual search</h3>
+            <button
+              className="action-link underline  block ms-auto"
+              type="button"
+              onClick={() => openSupplierModal(true)}
+            >
+              Browse Items
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1 mb-4">
+            <input
+              name="item_barcode"
+              type="text"
+              placeholder="Type item code..."
+              className="form-control"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 ">
+            <button className="btn w-full" onClick={closeModal} type="button">
+              Cancel
+            </button>
+            <button className="btn w-full" type="submit">
+              Confirm
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   )
 }
 
@@ -201,7 +305,7 @@ const ConfirmScanModal = ({ data, closeModal }) => {
       await createRequest({
         item_id: data.id,
         requested_price: data.item_price,
-        requested_quantity: data.order_threshold,
+        requested_quantity: data.default_order_qty,
         type: 'manual',
         request_status: 'pending',
         requester_id: 'd847766a-c8ca-461b-abc3-c45b5a11e710', // John Doe
@@ -219,7 +323,7 @@ const ConfirmScanModal = ({ data, closeModal }) => {
   return (
     <div className="bg-white rounded p-3 mx-3">
       <form onSubmit={handleAddRequest}>
-        <h3 className="font-semibold mb-3 text-xl">Confirm scan</h3>
+        <h3 className="modal-title">Confirm scan</h3>
         <div className="rounded border p-2 mx-auto">
           <img
             src={data.item_image || '/missing.png'}

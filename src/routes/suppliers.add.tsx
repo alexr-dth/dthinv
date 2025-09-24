@@ -87,7 +87,7 @@ function RouteComponent() {
 
   return (
     <>
-      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+      <div className="page-container">
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
@@ -148,7 +148,7 @@ function RouteComponent() {
           ))}
           <li>
             <button
-              className={`action-link w-full mt-6`}
+              className={`action-link w-full mt-6 underline`}
               onClick={() => setItems((prev) => [...prev, { id: Date.now() }])}
             >
               Add item

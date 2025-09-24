@@ -8,7 +8,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideListFilter } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import ItemCard from '@/components/Cards/ItemCard'
+import GridItemCard from '@/components/Cards/GridItemCard'
 
 export const Route = createFileRoute('/inventory/')({
   component: RouteComponent,
@@ -108,7 +108,7 @@ function RouteComponent() {
 
         <div className="grid grid-cols-2 gap-3 ">
           {data?.map((item) => (
-            <ItemCard
+            <GridItemCard
               key={item.id}
               data={item}
               actions={({ data }) => (

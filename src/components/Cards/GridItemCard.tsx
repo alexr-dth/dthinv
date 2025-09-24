@@ -1,9 +1,12 @@
 // ITEMS
 
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-export default function ItemCard({ data = {}, actions: Actions }) {
+export default function GridItemCard({ data = {}, actions = {} }) {
   const { t } = useTranslation()
+  const primary = actions['primary']
+
   return (
     <div className="rounded border p-2 h-full flex flex-col">
       <img
@@ -33,8 +36,8 @@ export default function ItemCard({ data = {}, actions: Actions }) {
         <span className="">{data.inventory || 0}</span>
       </div>
       <div className="text-nowrap font-medium text-sm">
-        <span className="font-semibold">{t('Threshold')}:</span>{' '}
-        <span className="">{data.order_threshold || 0}</span>
+        <span className="font-semibold">{t('Reorder Qty')}:</span>{' '}
+        <span className="">{data.default_order_qty || 0}</span>
       </div>
 
       <div className="text-2xl font-bold text-gray-800">
@@ -43,7 +46,16 @@ export default function ItemCard({ data = {}, actions: Actions }) {
 
       {/* ACTIONS */}
 
-      <div>{Actions({ data: data })}</div>
+      <div>
+        <div className="flex justify-end">
+          <button
+            className="action-link text-end text-sm"
+            onClick={() => primary?.cb(data.id)}
+          >
+            {primary?.label}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

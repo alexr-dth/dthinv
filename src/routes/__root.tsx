@@ -10,7 +10,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import type { QueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import axios from 'axios'
+import { healthCheck } from '@/api/api'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -24,7 +24,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
     const checkServer = async () => {
       try {
-        await axios.get('http://localhost:5012/')
+        await healthCheck()
         // toast.success('Server reached')
       } catch (error) {
         toast.error('Server unreachable')

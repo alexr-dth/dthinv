@@ -502,7 +502,7 @@ const RequestedProductCard = ({ data, setActiveModal, setRequestedItems }) => {
   )
 }
 
-// on the add request modal
+// on modal => AddRequestedModal
 const RequestedItemCard = ({ data, selected: checked, setCheckedArr }) => {
   const [expanded, setExpanded] = useState(false)
   const id = useId()

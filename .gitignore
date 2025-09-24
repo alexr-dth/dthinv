@@ -8,7 +8,7 @@ todo.md
 snippets.ts
 *.local
 count.txt
-.env
+.env.*
 .nitro
 .tanstack
 supabase/

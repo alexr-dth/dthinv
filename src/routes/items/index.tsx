@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
@@ -16,9 +16,10 @@ import {
 import BasicLoader from '@/components/BasicLoader'
 import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
-import ItemCard from '@/components/Cards/ItemCard'
+import GridItemCard from '@/components/Cards/GridItemCard'
 import ErrorScreen from '@/components/ErrorScreen'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
+import RowItemCard from '@/components/Cards/RowItemCard'
 
 // MAIN APP
 export const Route = createFileRoute('/items/')({
@@ -27,13 +28,19 @@ export const Route = createFileRoute('/items/')({
 
 function RouteComponent() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
-  const [mode, setMode] = useState('items')
+  const [gridView, setGridView] = useState(true)
   const [filteredData, setFilteredData] = useState([])
+
+  useQuery({
+    queryKey: ['suppliers'],
+    queryFn: fetchSuppliers,
+  })
 
   const {
     data = {},
@@ -44,12 +51,9 @@ function RouteComponent() {
     error,
     dataUpdatedAt,
   } = usePaginatedQuery({ queryKey: ['items'], queryFn: fetchPaginatedItems })
-  const { data: itemsData = [], totalCount } = data
 
-  useQuery({
-    queryKey: ['suppliers'],
-    queryFn: fetchSuppliers,
-  })
+  const itemsData = data?.items ?? []
+  const totalCount = data?.totalCount ?? 0
 
   useEffect(() => {
     setFilteredData(itemsData)
@@ -118,35 +122,41 @@ function RouteComponent() {
           setFilteredData={setFilteredData}
         />
 
-        {mode === 'items' && (
-          <div className="grid grid-cols-2 gap-2">
-            {filteredData?.map((item) => (
-              <ItemCard
-                key={item?.id}
-                data={item}
-                actions={({ data }) => (
-                  <div className="flex justify-end">
-                    {/* <button
-                      className="action-link text-end text-sm"
-                      onClick={() =>
-                        setActiveModal({ name: 'editItem', data: data })
-                      }
-                    >
-                      {t('Update')}
-                    </button> */}
-                    <Link
-                      className="action-link text-end text-sm"
-                      to="/items/$itemId/edit"
-                      params={{ itemId: item?.id }}
-                    >
-                      Edit
-                    </Link>
-                  </div>
-                )}
-              />
-            ))}
+        <section id="item-list-container">
+          <button
+            className="action-link text-xs underline ms-auto block mb-2"
+            onClick={() => setGridView(!gridView)}
+          >
+            {t('Toggle View')}
+          </button>
+          <div
+            className={
+              gridView ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2'
+            }
+          >
+            {/* Learn about react-window or react-virtual if displaying multiple items is causing lag. Kinda like culling  */}
+            {filteredData?.map((item, index) => {
+              const SelectedViewCard = gridView ? GridItemCard : RowItemCard
+              return (
+                <SelectedViewCard
+                  key={item?.id || index}
+                  data={item}
+                  actions={{
+                    primary: {
+                      cb: () => {
+                        navigate({
+                          to: '/items/$itemId/edit',
+                          params: { itemId: item.id },
+                        })
+                      },
+                      label: 'Edit',
+                    },
+                  }}
+                />
+              )
+            })}
           </div>
-        )}
+        </section>
 
         <div className="mt-5 text-center mb-5">
           <div className="text-xs mb-4 font-light text-gray-400">
@@ -240,6 +250,7 @@ const AddItemModal = ({ closeModal }) => {
     }
   }
 
+  // MODAL INSIDE A MODAL REFERENCE
   return (
     <>
       {newSupplierModal && (

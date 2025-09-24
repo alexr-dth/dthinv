@@ -9,6 +9,9 @@ export const authUser = {
   role: 'admin',
   id: 'c7b8779a-0c65-4b34-b60e-88135457b307',
 }
+
+export const healthCheck = async () => await axios.get(BASE_API.replace("/api", ""))
+
 // #region ═══════════ ITEMS ═══════════ //
 export const fetchItems = async () => {
   const { data } = await axios.get(BASE_API + '/items')
@@ -19,7 +22,7 @@ export const fetchPaginatedItems = async ({ pageParam = 1 }) => {
   const res = await axios.get(
     BASE_API + `/items?page=${pageParam}&limit=${PAGE_SIZE}`,
   )
-  console.log('Fetch page: ', pageParam)
+  console.log('Showing page: ', pageParam)
   return {
     data: res.data,
     totalCount: Number(res.headers['x-total-count']),

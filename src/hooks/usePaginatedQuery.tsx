@@ -1,25 +1,21 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
-export default function usePaginatedQuery({ queryKey, queryFn }) {
+export default function usePaginatedQuery({ queryKey, queryFn, enabled }) {
   return useInfiniteQuery({
     queryKey: queryKey,
     queryFn: queryFn,
+    enabled: enabled,
+
     select: (fetched) => ({
-      data: fetched.pages.flatMap((p) => p.data),
+      items: fetched.pages.flatMap((p) =>
+        Array.isArray(p?.data) ? p.data : [],
+      ),
       totalCount: fetched?.pages[0].totalCount || 0,
     }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       try {
-        const totalCount = lastPage?.totalCount
-
-        if (typeof totalCount !== 'number') {
-          console.warn(
-            'Missing or invalid totalCount in API response',
-            lastPage,
-          )
-          return undefined
-        }
+        const totalCount = lastPage?.totalCount || 0
 
         const totalFetched = allPages.reduce((acc, page) => {
           const items = Array.isArray(page.data) ? page.data.length : 0
@@ -30,7 +26,7 @@ export default function usePaginatedQuery({ queryKey, queryFn }) {
           return allPages.length + 1
         }
 
-        return undefined
+        return undefined // no more pages
       } catch (err) {
         console.error('Error in getNextPageParam:', err)
         return undefined // fail gracefully

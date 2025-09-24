@@ -63,7 +63,7 @@ export default function ItemSearchBarWithFilters({
         </div>
       </div>
 
-      <i className="page-notes">Filtering happens only on the client side and doesn’t make any new requests to the server.</i>
+      <i className="page-notes">Filtering is purely client-side — no extra server requests are made.</i>
 
       {expanded && (
         <div className=" space-y-1 px-3 py-2 border border-blue-500 rounded mt-1 shadow-md">
