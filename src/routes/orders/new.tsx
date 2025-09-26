@@ -109,7 +109,7 @@ function RouteComponent() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] }),
   })
   const closeModal = () => setActiveModal(null)
-  const handleSaveAndExport = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
     const form = e.target
     const btn = e.nativeEvent.submitter
@@ -141,6 +141,7 @@ function RouteComponent() {
         // console.log('Available at: ', `/orders/${newOrderId}`)
         navigate({
           to: '/orders/$orderId',
+          hash: 'export-btn',
           params: { orderId: newOrderId },
           replace: true,
         })
@@ -228,7 +229,7 @@ function RouteComponent() {
             <form
               id="add-order-form"
               className="space-y-3"
-              onSubmit={handleSaveAndExport}
+              onSubmit={handleSave}
             >
               <div>
                 <span className="font-bold text-sm">Ordered by:</span> <br />
@@ -312,9 +313,10 @@ function RouteComponent() {
             <div className="relative">
               <button
                 className="btn w-full"
-                onClick={() => {
-                  setPdfOptionExpanded(!pdfOptionExpanded)
-                }}
+                form="add-order-form"
+                // onClick={() => {
+                //   setPdfOptionExpanded(!pdfOptionExpanded)
+                // }}
               >
                 Save and Export to PDF
               </button>

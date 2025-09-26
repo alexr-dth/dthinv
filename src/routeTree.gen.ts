@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReceiveRouteImport } from './routes/receive'
-import { Route as PdfRouteImport } from './routes/pdf'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RequestsIndexRouteImport } from './routes/requests/index'
@@ -23,6 +22,7 @@ import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
+import { Route as DevPdfRouteImport } from './routes/dev/pdf'
 import { Route as DevPage2RouteImport } from './routes/dev/page2'
 import { Route as DevPage1RouteImport } from './routes/dev/page1'
 import { Route as DevInfiniteRouteImport } from './routes/dev/infinite'
@@ -39,11 +39,6 @@ const RequestRoute = RequestRouteImport.update({
 const ReceiveRoute = ReceiveRouteImport.update({
   id: '/receive',
   path: '/receive',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PdfRoute = PdfRouteImport.update({
-  id: '/pdf',
-  path: '/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -101,6 +96,11 @@ const OrdersNewRoute = OrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevPdfRoute = DevPdfRouteImport.update({
+  id: '/dev/pdf',
+  path: '/dev/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevPage2Route = DevPage2RouteImport.update({
   id: '/dev/page2',
   path: '/dev/page2',
@@ -141,12 +141,12 @@ const ItemsItemIdEditRoute = ItemsItemIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
+  '/dev/pdf': typeof DevPdfRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -164,12 +164,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
+  '/dev/pdf': typeof DevPdfRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -188,12 +188,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/pdf': typeof PdfRoute
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
+  '/dev/pdf': typeof DevPdfRoute
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -213,12 +213,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/pdf'
     | '/receive'
     | '/request'
     | '/dev/infinite'
     | '/dev/page1'
     | '/dev/page2'
+    | '/dev/pdf'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -236,12 +236,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/pdf'
     | '/receive'
     | '/request'
     | '/dev/infinite'
     | '/dev/page1'
     | '/dev/page2'
+    | '/dev/pdf'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -259,12 +259,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
-    | '/pdf'
     | '/receive'
     | '/request'
     | '/dev/infinite'
     | '/dev/page1'
     | '/dev/page2'
+    | '/dev/pdf'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -283,12 +283,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
-  PdfRoute: typeof PdfRoute
   ReceiveRoute: typeof ReceiveRoute
   RequestRoute: typeof RequestRoute
   DevInfiniteRoute: typeof DevInfiniteRoute
   DevPage1Route: typeof DevPage1Route
   DevPage2Route: typeof DevPage2Route
+  DevPdfRoute: typeof DevPdfRoute
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
   SuppliersAddRoute: typeof SuppliersAddRoute
@@ -318,13 +318,6 @@ declare module '@tanstack/react-router' {
       path: '/receive'
       fullPath: '/receive'
       preLoaderRoute: typeof ReceiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pdf': {
-      id: '/pdf'
-      path: '/pdf'
-      fullPath: '/pdf'
-      preLoaderRoute: typeof PdfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -404,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/pdf': {
+      id: '/dev/pdf'
+      path: '/dev/pdf'
+      fullPath: '/dev/pdf'
+      preLoaderRoute: typeof DevPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/page2': {
       id: '/dev/page2'
       path: '/dev/page2'
@@ -459,12 +459,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
-  PdfRoute: PdfRoute,
   ReceiveRoute: ReceiveRoute,
   RequestRoute: RequestRoute,
   DevInfiniteRoute: DevInfiniteRoute,
   DevPage1Route: DevPage1Route,
   DevPage2Route: DevPage2Route,
+  DevPdfRoute: DevPdfRoute,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
   SuppliersAddRoute: SuppliersAddRoute,

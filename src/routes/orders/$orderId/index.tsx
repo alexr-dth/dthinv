@@ -1,6 +1,7 @@
 import { fetchOrderById } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
+import generateOrderPdf from '@/utils/generateOrderPdf'
 import totalPrice from '@/utils/totalPrice'
 import totalUnits from '@/utils/totalUnits'
 import { useQuery } from '@tanstack/react-query'
@@ -36,6 +37,12 @@ function RouteComponent() {
     queryFn: () => fetchOrderById(orderId),
   })
 
+  const requestedItems = order.requested_items || []
+  const items = requestedItems?.map((rItem) => ({
+    ...rItem.item,
+    quoted_quantity: rItem.quoted_quantity,
+  }))
+
   useEffect(() => {
     if (isLoading || Object.keys(order).length) return
     toast.error('Order not found')
@@ -47,12 +54,35 @@ function RouteComponent() {
     const btn = e.target
     btn.disabled = true
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      throw new Error()
       // create a pdf here and downlaod it
-
+      const head = [['Image', 'Name', 'Description', 'Quantity']]
+      const body = items?.map((item) => [
+        item.item_image,
+        item.short_name,
+        item.item_desc,
+        item.quoted_quantity,
+      ])
+      // const body = [
+      //   [
+      //     'Hammer, 16oz Claw asdadasddddddddddd dddddddddddddddddddd dddddddddddddddddddddd dddddddddddddddddddddddd ddddddd',
+      //     'HD-001',
+      //     'n/a',
+      //     12.5,
+      //     10,
+      //   ],
+      //   [
+      //     'Screwdriver Set (6 pcs)',
+      //     'HD-002',
+      //     'Preferred brand: Stanley',
+      //     18.75,
+      //     5,
+      //   ],
+      //   ['Measuring Tape 5m', 'HD-003', 'n/a', 7.2, 12],
+      //   ['Drill Bit Set (10 pcs, HSS)', 'HD-004', 'Urgent', 22.0, 4],
+      //   ['Safety Gloves (Pair, Large)', 'HD-005', 'n/a', 3.5, 20],
+      // ]
+      generateOrderPdf({ order, head, body })
       setPdfOptionExpanded(false)
-      toast.success('Order ticket created')
     } catch (error) {
       console.log(error)
       toast.error('Process failed')
@@ -139,7 +169,7 @@ function RouteComponent() {
         <div className="font-bold text-sm mt-10">Products included:</div>
         <div className="space-y-2">
           <SupplierProductSetWithPrice
-            requestedItems={order.requested_items}
+            requestedItems={requestedItems}
             supplier={order.supplier}
           />
         </div>
@@ -148,6 +178,7 @@ function RouteComponent() {
 
         <div className="relative">
           <button
+            id="export-btn"
             className="btn w-full"
             onClick={() => setPdfOptionExpanded(!pdfOptionExpanded)}
           >

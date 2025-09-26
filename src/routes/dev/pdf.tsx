@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { jsPDF } from 'jspdf'
 import { autoTable } from 'jspdf-autotable'
 
-export const Route = createFileRoute('/pdf')({
+export const Route = createFileRoute('/dev/pdf')({
   component: RouteComponent,
 })
 
