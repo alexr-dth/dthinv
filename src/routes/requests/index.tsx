@@ -1,9 +1,38 @@
-import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { fetchRequestsFormatted } from '@/api/api'
-import toast from 'react-hot-toast'
+import usePaginatedQuery from '@/hooks/usePaginatedQuery'
+import { fetchPaginatedRequests } from '@/api/api'
+import PendingRequestedCard from '@/components/Cards/PendingRequestedCard'
+
+const groupDataArr = (data = []) => {
+  return data.reduce((acc, row) => {
+    // Jan 1, 2001
+    const dateLabel = new Date(row.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+    // {label: "Jan 1, 2001" }
+    let dateObj = acc.find((d) => d['label'] === dateLabel)
+    if (!dateObj) {
+      dateObj = { label: dateLabel, suppliers: [] }
+      acc.push(dateObj)
+    }
+    const supplier = row.item?.supplier || {}
+    let supplierObj = dateObj.suppliers.find((s) => s.name === supplier.name)
+    if (!supplierObj) {
+      // {name: "Supplier Name", barcode_qr: "abcxyz", requested_items: []}
+      supplierObj = { ...supplier, requested_items: [] }
+
+      // {label: "Jan 1, 2001", supplier: [{..., requested_items: []}]  }
+      dateObj.suppliers.push(supplierObj)
+    }
+    // Push item
+    supplierObj.requested_items.push(row)
+    return acc
+  }, [])
+}
 
 export const Route = createFileRoute('/requests/')({
   component: RouteComponent,
@@ -11,47 +40,56 @@ export const Route = createFileRoute('/requests/')({
 
 function RouteComponent() {
   const { t } = useTranslation()
-
+  const [filteredData, setFilteredData] = useState([])
   const [activeModal, setActiveModal] = useState<{
     name: string
     data?: any
   } | null>(null)
 
-  const { data: requestedItems = [] } = useQuery({
-    queryKey: ['requested-items'],
-    queryFn: fetchRequestsFormatted,
-    select: (fetched) => {
-      // sort via date/label
-      return fetched.sort((a, b) => new Date(b.label) - new Date(a.label))
-    },
+  const {
+    data = {},
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isLoading,
+    error,
+    dataUpdatedAt,
+  } = usePaginatedQuery({
+    queryKey: ['requested-items', 'paginated'],
+    queryFn: fetchPaginatedRequests,
   })
+
+  const itemsData = groupDataArr(data?.items ?? [])
+  const totalCount = data?.totalCount ?? 0
+
+  // useEffect(() => {
+  //   setFilteredData(itemsData)
+  // }, [dataUpdatedAt])
 
   return (
     <>
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
-          <div className="w-dvw max-w-md">
-            {/* {activeModal.name == 'manualSearch' && (
-              <ManualSearchModal
-                confirmCallback={checkIfItemExist}
-                cancelCallback={closeModal}
-              />
-            )} */}
-          </div>
+          <div className="w-dvw max-w-md">{/* modal*/}</div>
         </div>
       )}
 
       <div className="page-container">
-        <div className="divide-x ">
-          <Link to="/" className="action-link !ps-0">
-            {t('Home')}
+        <div className="flex justify-between">
+          <div className="divide-x ">
+            <Link to="/" className="action-link !ps-0">
+              {t('Home')}
+            </Link>
+            <button
+              onClick={() => window.history.back()}
+              className="action-link px-1"
+            >
+              {t('Back')}
+            </button>
+          </div>
+          <Link to="/request" className="action-link">
+            Request
           </Link>
-          <button
-            onClick={() => window.history.back()}
-            className="action-link px-1"
-          >
-            {t('Back')}
-          </button>
         </div>
 
         <h2 className="page-title">Requested Items</h2>
@@ -67,88 +105,76 @@ function RouteComponent() {
           </button>
         </div>
 
-        <div className="space-y-8">
-          {requestedItems.map((group, index) => (
-            <div>
-              <TitleDivider title={group.label} key={index} />
-              <div className="space-y-1">
-                {(group.suppliers || []).map((set, index) => (
-                  <SupplierProductSetWithActions
-                    key={index}
-                    supplier={set}
-                    requestedItems={set.requested_items}
-                  />
-                ))}
-              </div>
+        {itemsData?.length < 1 ? (
+          <>
+            <div className="empty-list mt-5">empty list</div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-8">
+              {itemsData.map((group, index) => (
+                <div key={index}>
+                  <TitleDivider title={group.label} />
+                  <div className="space-y-1">
+                    {(group.suppliers || []).map((set, index) => (
+                      <SupplierProductSetWithActions
+                        key={index}
+                        supplier={set}
+                        requestedItems={set.requested_items}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
-        <button className="action-link underline !text-gray-300 block mx-auto text-sm font-bold py-4">
-          Load More...
-        </button>
+        <div className="mt-5 text-center mb-5">
+          <div className="text-xs mb-4 font-light text-gray-400">
+            Showing {itemsData?.length} of {totalCount} items
+          </div>
+          {hasNextPage && (
+            <button
+              className="action-link"
+              disabled={isFetching}
+              onClick={() => fetchNextPage()}
+            >
+              Load More...
+            </button>
+          )}
+        </div>
       </div>
     </>
   )
 }
 
-const TitleDivider = ({ title, mode = 'days' }) => {
-  const formatDaysAgo = (input) => {
-    const date = new Date(input)
-    if (isNaN(date)) return input // fallback if not a valid date
-
-    const now = new Date()
-    const diffMs = now - date
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffDays < 1) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 30) return `${diffDays} days ago`
-    if (diffDays < 60) return 'a month ago'
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
-    if (diffDays < 730) return 'a year ago'
-
-    return `${Math.floor(diffDays / 365)} years ago`
-  }
-
-  const displayText = mode === 'days' ? formatDaysAgo(title) : title
-
-  return (
-    <div className="mt-3 flex items-center flex-nowrap w-full text-blue-400">
-      <div className="flex-grow border-t border-dashed"></div>
-      <span className="mx-4">{displayText}</span>
-      <div className="flex-grow border-t border-dashed"></div>
-    </div>
-  )
-}
-
 const SupplierProductSetWithActions = ({ supplier, requestedItems }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate({ from: '/' })
 
   const [expanded, setExpanded] = useState(false)
-  const [selectedAll, selectAll] = useState(false)
-
-  const [checkedArr, setCheckedArr] = useState([])
+  const [selectedIds, setSelectedIds] = useState([])
 
   const handleProceedNewOrder = () => {
-    if (!checkedArr.length) return alert('No items selected')
+    if (!selectedIds?.length || !Array.isArray(selectedIds))
+      return alert('No items selected')
     navigate({
       to: '/orders/new',
-      state: { checkedArrIds: checkedArr, supplier },
+      state: { selectedIds, supplier },
     })
   }
 
   return (
-    <div className="border rounded cursor-pointer">
+    <div className="border rounded">
       <h3
-        className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'}`}
+        className={` p-2 flex items-center gap-1 ${expanded && 'border-b-1'} cursor-pointer`}
         onClick={() => setExpanded(!expanded)}
       >
         <div>
           <h5 className="text-lg font-semibold uppercase">{supplier.name}</h5>
           {!expanded && (
             <span className="text-xs text-gray-500">
-              ({requestedItems.length || 0} item/s)
+              ({requestedItems?.length || 0} item/s)
             </span>
           )}
         </div>
@@ -159,19 +185,19 @@ const SupplierProductSetWithActions = ({ supplier, requestedItems }) => {
       {expanded && (
         <div className="px-2 pb-2">
           <ul className="space-y-2 divide-y divide-gray-400 pb-2">
-            {(requestedItems || []).map((item) =>
-              item.request_status === 'processing' ? (
-                <ProcessingRequestedCard data={item} key={item.id} />
-              ) : item.request_status === 'complete' ? (
-                <CompletedRequestedCard data={item} key={item.id} />
-              ) : item.request_status === 'denied' ? (
-                <DeniedRequestedCard data={item} key={item.id} />
+            {(requestedItems || []).map((reqItem) =>
+              reqItem.request_status === 'processing' ? (
+                <ProcessingRequestedCard data={reqItem} key={reqItem.id} />
+              ) : reqItem.request_status === 'complete' ? (
+                <CompleteRequestedCard data={reqItem} key={reqItem.id} />
+              ) : reqItem.request_status === 'denied' ? (
+                <DeniedRequestedCard data={reqItem} key={reqItem.id} />
               ) : (
-                <RequestedItemCard
-                  data={item}
-                  key={item.id}
-                  selected={checkedArr.includes(item.id)}
-                  setCheckedArr={setCheckedArr}
+                <PendingRequestedCard
+                  key={reqItem.id}
+                  data={reqItem}
+                  selected={selectedIds.includes(reqItem.id)}
+                  setSelectedIds={setSelectedIds}
                 />
               ),
             )}
@@ -189,8 +215,7 @@ const SupplierProductSetWithActions = ({ supplier, requestedItems }) => {
               <button
                 className="action-link text-xs"
                 onClick={() => {
-                  selectAll(false)
-                  setCheckedArr([])
+                  setSelectedIds([])
                 }}
               >
                 Select none
@@ -198,106 +223,21 @@ const SupplierProductSetWithActions = ({ supplier, requestedItems }) => {
               <button
                 className="action-link text-xs"
                 onClick={() => {
-                  selectAll(true)
-                  setCheckedArr(() => {
+                  setSelectedIds(() => {
                     return requestedItems.map((item) => item.id)
                   })
                 }}
               >
                 Select all
               </button>
-              {/* <button className="action-link !text-lg font-bold ms-auto">
-                  Proceed→
-                </button> */}
               <button
                 className="action-link !text-lg font-bold ms-auto"
                 onClick={handleProceedNewOrder}
+                disabled={!selectedIds?.length || false}
               >
                 Proceed→
               </button>
             </div>
-          </div>
-
-          {/* <div className="py-2 text-center">No items added</div> */}
-        </div>
-      )}
-    </div>
-  )
-}
-
-const RequestedItemCard = ({ data, selected: checked, setCheckedArr }) => {
-  const [expanded, setExpanded] = useState(false)
-  const id = useId()
-  const item = data.item
-  return (
-    <div className="mt-2">
-      <div className="flex items-stretch gap-2 mb-1">
-        <label className="w-1/4 self-center" htmlFor={id}>
-          <img
-            src={item.item_image || '/missing.png'}
-            alt=""
-            className="object-contain"
-          />
-        </label>
-        <label className="w-3/4 flex flex-col" htmlFor={id}>
-          <div className="font-bold text-xs text-gray-400 uppercase">
-            {data.type || 'n/a'}
-          </div>
-          <div className="text-lg leading-5 line-clamp-2 flex-grow-1 flex-shrink-0">
-            {item.short_name || 'n/a'}
-          </div>
-          <div className="flex items-center">
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 font-medium tracking-wide truncate">
-                {item.sku_number || 'n/a'}
-              </div>
-
-              <div className="text-xs text-gray-400 truncate">
-                {item?.internet_sku_number || 'n/a'}
-              </div>
-
-              <div className="text-nowrap font-bold text-sm">
-                <span>Onhand:</span> {item.inventory || 0}
-              </div>
-            </div>
-
-            <div className="flex-1 font-bold text-end">
-              ${parseFloat(item.item_price || 0).toFixed(2)}
-            </div>
-          </div>
-        </label>
-        <div className="self-center px-1">
-          <input
-            type="checkbox"
-            className="h-5 aspect-square"
-            id={id}
-            checked={checked}
-            onChange={(e) => {
-              setCheckedArr((prev) => {
-                return !checked
-                  ? [...prev, data.id] // add
-                  : prev.filter((i) => i != data.id) // subtract
-              })
-            }}
-          />
-        </div>
-      </div>
-
-      <button
-        className="text-xs  !text-gray-400 mx-auto block"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {expanded ? 'Less' : '•••'}
-      </button>
-
-      {expanded && (
-        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
-          <div>
-            <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
-          </div>
-          <div>
-            <span className="font-bold">Notes: </span> n/a
           </div>
         </div>
       )}
@@ -346,20 +286,46 @@ const ProcessingRequestedCard = ({ data }) => {
       </div>
 
       <button
-        className="text-xs  !text-gray-400 mx-auto block"
+        className="text-xs  !text-gray-400 mx-auto block  px-5 py-1"
         onClick={() => setExpanded(!expanded)}
       >
         {expanded ? 'Less' : '•••'}
       </button>
 
       {expanded && (
-        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+        <div className="text-xs leading-4 text-gray-500 mb-4 px-2">
+          {data.order_id && (
+            <div>
+              <span className="font-bold">Order Id: </span>{' '}
+              <Link
+                to="/orders/$orderId"
+                params={{ orderId: data.order_id }}
+                className="action-link underline"
+              >
+                {data.order_id}
+              </Link>
+            </div>
+          )}
+
+          <div>
+            <span className="font-bold">Requested by: </span>
+            {data.type === 'system'
+              ? 'SYSTEM'
+              : (data.requester?.username ?? 'n/a')}
+          </div>
+          {data.evaluator_id && (
+            <div>
+              <span className="font-bold">Evaluated by: </span>
+              {data.evaluator?.username ?? 'n/a'}
+            </div>
+          )}
+
           <div>
             <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+            {item.item_desc}
           </div>
           <div>
-            <span className="font-bold">Notes: </span> n/a
+            <span className="font-bold">Notes: </span> {data.notes || 'n/a'}
           </div>
         </div>
       )}
@@ -367,7 +333,7 @@ const ProcessingRequestedCard = ({ data }) => {
   )
 }
 
-const CompletedRequestedCard = ({ data }) => {
+const CompleteRequestedCard = ({ data }) => {
   const [expanded, setExpanded] = useState(false)
   const item = data.item
 
@@ -408,20 +374,46 @@ const CompletedRequestedCard = ({ data }) => {
       </div>
 
       <button
-        className="text-xs  !text-gray-400 mx-auto block"
+        className="text-xs  !text-gray-400 mx-auto block  px-5 py-1"
         onClick={() => setExpanded(!expanded)}
       >
         {expanded ? 'Less' : '•••'}
       </button>
 
       {expanded && (
-        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+        <div className="text-xs leading-4 text-gray-500 mb-4 px-2">
+          {data.order_id && (
+            <div>
+              <span className="font-bold">Order Id: </span>{' '}
+              <Link
+                to="/orders/$orderId"
+                params={{ orderId: data.order_id }}
+                className="action-link underline"
+              >
+                {data.order_id}
+              </Link>
+            </div>
+          )}
+
+          <div>
+            <span className="font-bold">Requested by: </span>
+            {data.type === 'system'
+              ? 'SYSTEM'
+              : (data.requester?.username ?? 'n/a')}
+          </div>
+          {data.evaluator_id && (
+            <div>
+              <span className="font-bold">Evaluated by: </span>
+              {data.evaluator?.username ?? 'n/a'}
+            </div>
+          )}
+
           <div>
             <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+            {item.item_desc}
           </div>
           <div>
-            <span className="font-bold">Notes: </span> n/a
+            <span className="font-bold">Notes: </span> {data.notes || 'n/a'}
           </div>
         </div>
       )}
@@ -470,23 +462,79 @@ const DeniedRequestedCard = ({ data }) => {
       </div>
 
       <button
-        className="text-xs  !text-gray-400 mx-auto block"
+        className="text-xs  !text-gray-400 mx-auto block  px-5 py-1"
         onClick={() => setExpanded(!expanded)}
       >
         {expanded ? 'Less' : '•••'}
       </button>
 
       {expanded && (
-        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+        <div className="text-xs leading-4 text-gray-500 mb-4 px-2">
+          {data.order_id && (
+            <div>
+              <span className="font-bold">Order Id: </span>{' '}
+              <Link
+                to="/orders/$orderId"
+                params={{ orderId: data.order_id }}
+                className="action-link underline"
+              >
+                {data.order_id}
+              </Link>
+            </div>
+          )}
+
+          <div>
+            <span className="font-bold">Requested by: </span>
+            {data.type === 'system'
+              ? 'SYSTEM'
+              : (data.requester?.username ?? 'n/a')}
+          </div>
+          {data.evaluator_id && (
+            <div>
+              <span className="font-bold">Evaluated by: </span>
+              {data.evaluator?.username ?? 'n/a'}
+            </div>
+          )}
+
           <div>
             <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+            {item.item_desc}
           </div>
           <div>
-            <span className="font-bold">Notes: </span> n/a
+            <span className="font-bold">Notes: </span> {data.notes || 'n/a'}
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+const TitleDivider = ({ title, mode = 'days' }) => {
+  const formatDaysAgo = (input) => {
+    const date = new Date(input)
+    if (isNaN(date)) return input // fallback if not a valid date
+
+    const now = new Date()
+    const diffMs = now - date
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 1) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 30) return `${diffDays} days ago`
+    if (diffDays < 60) return 'a month ago'
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
+    if (diffDays < 730) return 'a year ago'
+
+    return `${Math.floor(diffDays / 365)} years ago`
+  }
+
+  const displayText = mode === 'days' ? formatDaysAgo(title) : title
+
+  return (
+    <div className="mt-3 flex items-center flex-nowrap w-full text-blue-400">
+      <div className="flex-grow border-t border-dashed"></div>
+      <span className="mx-4">{displayText}</span>
+      <div className="flex-grow border-t border-dashed"></div>
     </div>
   )
 }

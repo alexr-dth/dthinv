@@ -11,17 +11,19 @@ function App() {
   const { t } = useTranslation()
   return (
     <div className="page-container">
-      <div className="divide-x ">
-        <Link to="/" className="action-link !ps-0 disabled" disabled>
-          {t('Home')}
-        </Link>
-        <button
-          onClick={() => window.history.back()}
-          className="action-link px-1"
-          disabled
-        >
-          {t('Back')}
-        </button>
+      <div className="flex justify-between">
+        <div className="divide-x ">
+          <Link to="/" className="action-link !ps-0" disabled>
+            {t('Home')}
+          </Link>
+          <button
+            onClick={() => window.history.back()}
+            className="action-link px-1"
+            disabled
+          >
+            {t('Back')}
+          </button>
+        </div>
       </div>
       <h2 className="text-2xl text-center mb-3 font-bold">DTH Inventory App</h2>
 
@@ -64,7 +66,8 @@ function App() {
         </Link>
 
         <Link to="/locations" className="btn w-full">
-          {t('Storage Locations')} <span className='text-xs text-red-500'>(*buggy)</span>
+          {t('Storage Locations')}{' '}
+          <span className="text-xs text-red-500">(*buggy)</span>
         </Link>
 
         <Link to="/" className="btn w-full disabled">
@@ -77,7 +80,7 @@ function App() {
 
         <TitleDivider title={'Collection'} />
         <Link to="/items" className="btn w-full">
-          {t('Items')}/{t('Products')}
+          {t('Items')}/{t('Products')}<span className="text-xs text-green-700">(*okay)</span>
         </Link>
 
         <Link to="/inventory" className="btn w-full">

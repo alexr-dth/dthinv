@@ -51,9 +51,9 @@ function RouteComponent() {
               Back
             </button>
           </div>
-          {/* <button className="action-link">
-            Save
-          </button> */}
+          <Link to={'/orders/new'} className="action-link">
+            Create Order
+          </Link>
         </div>
         <h2 className="page-title">All Orders</h2>
         <div id="title-buttons" className="space-x-1 overflow-auto mb-2">

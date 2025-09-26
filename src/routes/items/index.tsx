@@ -13,7 +13,7 @@ import {
   fetchSuppliers,
   removeItemMutation,
 } from '@/api/api'
-import BasicLoader from '@/components/BasicLoader'
+import InlineLoader from '@/components/InlineLoader'
 import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
 import GridItemCard from '@/components/Cards/GridItemCard'
@@ -50,7 +50,10 @@ function RouteComponent() {
     isLoading,
     error,
     dataUpdatedAt,
-  } = usePaginatedQuery({ queryKey: ['items'], queryFn: fetchPaginatedItems })
+  } = usePaginatedQuery({
+    queryKey: ['items', 'paginated'],
+    queryFn: fetchPaginatedItems,
+  })
 
   const itemsData = data?.items ?? []
   const totalCount = data?.totalCount ?? 0
@@ -160,7 +163,7 @@ function RouteComponent() {
 
         <div className="mt-5 text-center mb-5">
           <div className="text-xs mb-4 font-light text-gray-400">
-            Showing {filteredData.length} of {totalCount} items
+            Showing {filteredData?.length || 0} of {totalCount} items
           </div>
           {hasNextPage && (
             <button
@@ -212,7 +215,7 @@ const AddItemModal = ({ closeModal }) => {
         item_desc: form.elements['desc']?.value,
         item_price: parseFloat(form.elements['price']?.value),
         item_image: form.elements['image']?.value,
-        order_threshold: form.elements['threshold']?.value,
+        default_order_qty: form.elements['threshold']?.value,
       })
       closeModal()
       toast.success('Added item')
@@ -303,7 +306,7 @@ const AddItemModal = ({ closeModal }) => {
             <h3 className="font-semibold  mb-3 text-xl">Choose a supplier:</h3>
 
             <div className="space-y-2 mb-6 max-h-72 overflow-auto py-5 px-10 border rounded">
-              <BasicLoader waitFor={suppliersLoading} />
+              <InlineLoader waitFor={suppliersLoading} />
               {suppliers.map((sup) => (
                 <button
                   key={sup.id}
@@ -399,6 +402,7 @@ const AddItemModal = ({ closeModal }) => {
                 <input
                   name="price"
                   type="number"
+                  step="0.01"
                   placeholder="Price"
                   className="form-control"
                 />
@@ -574,6 +578,7 @@ const EditItemModal = ({ data, closeModal }) => {
           <input
             name="price"
             type="number"
+            step="0.01"
             placeholder="$100.00"
             defaultValue={data?.item_price}
             className="w-full border rounded p-2"
@@ -591,7 +596,7 @@ const EditItemModal = ({ data, closeModal }) => {
             name="threshold"
             type="number"
             placeholder="(e.g. 10, 20, 30...)"
-            defaultValue={data?.order_threshold}
+            defaultValue={data?.default_order_qty}
             className="w-full form-control"
           />
         </div>

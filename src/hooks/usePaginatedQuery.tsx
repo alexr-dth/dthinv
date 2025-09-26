@@ -1,17 +1,28 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
+import type { Callback } from 'i18next'
 
-export default function usePaginatedQuery({ queryKey, queryFn, enabled }) {
+export default function usePaginatedQuery({
+  queryKey,
+  queryFn,
+  enabled = true,
+  select = null,
+}) {
   return useInfiniteQuery({
     queryKey: queryKey,
     queryFn: queryFn,
     enabled: enabled,
 
-    select: (fetched) => ({
-      items: fetched.pages.flatMap((p) =>
-        Array.isArray(p?.data) ? p.data : [],
-      ),
-      totalCount: fetched?.pages[0].totalCount || 0,
-    }),
+    select: (fetched) => {
+      const flatData = {
+        items: fetched.pages.flatMap((p) =>
+          Array.isArray(p?.data) ? p.data : [],
+        ),
+        totalCount: fetched?.pages[0].totalCount || 0,
+      }
+
+      if (select != null) select(flatData)
+      return flatData
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       try {

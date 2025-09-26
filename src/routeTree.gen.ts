@@ -23,6 +23,8 @@ import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
+import { Route as DevPage2RouteImport } from './routes/dev/page2'
+import { Route as DevPage1RouteImport } from './routes/dev/page1'
 import { Route as DevInfiniteRouteImport } from './routes/dev/infinite'
 import { Route as OrdersOrderIdIndexRouteImport } from './routes/orders/$orderId/index'
 import { Route as OrdersOrderIdEditRouteImport } from './routes/orders/$orderId/edit'
@@ -99,6 +101,16 @@ const OrdersNewRoute = OrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevPage2Route = DevPage2RouteImport.update({
+  id: '/dev/page2',
+  path: '/dev/page2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevPage1Route = DevPage1RouteImport.update({
+  id: '/dev/page1',
+  path: '/dev/page1',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevInfiniteRoute = DevInfiniteRouteImport.update({
   id: '/dev/infinite',
   path: '/dev/infinite',
@@ -133,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
+  '/dev/page1': typeof DevPage1Route
+  '/dev/page2': typeof DevPage2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -154,6 +168,8 @@ export interface FileRoutesByTo {
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
+  '/dev/page1': typeof DevPage1Route
+  '/dev/page2': typeof DevPage2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -176,6 +192,8 @@ export interface FileRoutesById {
   '/receive': typeof ReceiveRoute
   '/request': typeof RequestRoute
   '/dev/infinite': typeof DevInfiniteRoute
+  '/dev/page1': typeof DevPage1Route
+  '/dev/page2': typeof DevPage2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -199,6 +217,8 @@ export interface FileRouteTypes {
     | '/receive'
     | '/request'
     | '/dev/infinite'
+    | '/dev/page1'
+    | '/dev/page2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -220,6 +240,8 @@ export interface FileRouteTypes {
     | '/receive'
     | '/request'
     | '/dev/infinite'
+    | '/dev/page1'
+    | '/dev/page2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -241,6 +263,8 @@ export interface FileRouteTypes {
     | '/receive'
     | '/request'
     | '/dev/infinite'
+    | '/dev/page1'
+    | '/dev/page2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -263,6 +287,8 @@ export interface RootRouteChildren {
   ReceiveRoute: typeof ReceiveRoute
   RequestRoute: typeof RequestRoute
   DevInfiniteRoute: typeof DevInfiniteRoute
+  DevPage1Route: typeof DevPage1Route
+  DevPage2Route: typeof DevPage2Route
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
   SuppliersAddRoute: typeof SuppliersAddRoute
@@ -378,6 +404,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/page2': {
+      id: '/dev/page2'
+      path: '/dev/page2'
+      fullPath: '/dev/page2'
+      preLoaderRoute: typeof DevPage2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/page1': {
+      id: '/dev/page1'
+      path: '/dev/page1'
+      fullPath: '/dev/page1'
+      preLoaderRoute: typeof DevPage1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/infinite': {
       id: '/dev/infinite'
       path: '/dev/infinite'
@@ -423,6 +463,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReceiveRoute: ReceiveRoute,
   RequestRoute: RequestRoute,
   DevInfiniteRoute: DevInfiniteRoute,
+  DevPage1Route: DevPage1Route,
+  DevPage2Route: DevPage2Route,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
   SuppliersAddRoute: SuppliersAddRoute,

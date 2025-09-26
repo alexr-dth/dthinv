@@ -15,7 +15,7 @@ code {
 }
 
 .btn {
-  @apply p-2 text-center border rounded cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply p-2 text-center border rounded cursor-pointer disabled:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-blue-600 hover:ring hover:ring-blue-200 transition;
 }
 
 .btn.disabled {
@@ -122,4 +122,8 @@ i.page-notes::before {
 
 .modal-title {
   @apply font-semibold mb-3 text-xl
+}
+
+.empty-list {
+  @apply py-10 text-center border-dashed border-x rounded bg-gray-100 text-sm italic text-gray-400
 }

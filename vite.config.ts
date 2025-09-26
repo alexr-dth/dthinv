@@ -32,9 +32,6 @@ export default defineConfig({
   server: {
     allowedHosts: ['.ngrok-free.app'],
     host: true,
-    proxy: {
-      '/images/': 'http://localhost:5013',
-    },
   },
   test: {
     globals: true,

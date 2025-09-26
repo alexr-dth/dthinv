@@ -181,7 +181,7 @@ function RouteComponent() {
 
       <form className="space-y-3 mt-5" onSubmit={handleEditItem}>
         <fieldset>
-          <details className='open:[&>summary]:text-blue-500'>
+          <details className="open:[&>summary]:text-blue-500">
             <summary className="text-lg font-semibold text-gray-500">
               Descriptions
             </summary>
@@ -218,7 +218,7 @@ function RouteComponent() {
         </fieldset>
 
         <fieldset>
-          <details className='open:[&>summary]:text-blue-500'>
+          <details className="open:[&>summary]:text-blue-500">
             <summary className="text-lg font-semibold text-gray-500">
               Identifiers
             </summary>
@@ -290,7 +290,7 @@ function RouteComponent() {
         </fieldset>
 
         <fieldset>
-          <details className='open:[&>summary]:text-blue-500'>
+          <details className="open:[&>summary]:text-blue-500">
             <summary className="text-lg font-semibold text-gray-500">
               Supplier & Pricing
             </summary>
@@ -317,6 +317,7 @@ function RouteComponent() {
                   <input
                     name="item_price"
                     type="number"
+                    step="0.01"
                     className="form-control-bare w-full"
                     defaultValue={itemData.item_price}
                   />
@@ -345,7 +346,7 @@ function RouteComponent() {
         </fieldset>
 
         <fieldset>
-          <details className='open:[&>summary]:text-blue-500'>
+          <details className="open:[&>summary]:text-blue-500">
             <summary className="text-lg font-semibold text-gray-500">
               Inventory & Logistics
             </summary>

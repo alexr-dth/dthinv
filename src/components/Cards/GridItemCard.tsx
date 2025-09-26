@@ -1,6 +1,4 @@
 // ITEMS
-
-import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 export default function GridItemCard({ data = {}, actions = {} }) {

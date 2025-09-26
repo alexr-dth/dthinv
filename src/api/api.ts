@@ -10,7 +10,8 @@ export const authUser = {
   id: 'c7b8779a-0c65-4b34-b60e-88135457b307',
 }
 
-export const healthCheck = async () => await axios.get(BASE_API.replace("/api", ""))
+export const healthCheck = async () =>
+  await axios.get(BASE_API.replace('/api', ''))
 
 // #region ═══════════ ITEMS ═══════════ //
 export const fetchItems = async () => {
@@ -19,10 +20,12 @@ export const fetchItems = async () => {
 }
 
 export const fetchPaginatedItems = async ({ pageParam = 1 }) => {
-  const res = await axios.get(
-    BASE_API + `/items?page=${pageParam}&limit=${PAGE_SIZE}`,
-  )
-  console.log('Showing page: ', pageParam)
+  const res = await axios.get(BASE_API + `/items`, {
+    params: {
+      page: pageParam,
+      pageSize: PAGE_SIZE,
+    },
+  })
   return {
     data: res.data,
     totalCount: Number(res.headers['x-total-count']),
@@ -48,8 +51,10 @@ export const removeItemMutation = async (data) => {
 // #endregion
 
 // #region ═══════════ REQUESTS ═══════════ //
-export const fetchRequests = async () => {
-  const { data } = await axios.get(BASE_API + '/requested-items')
+export const fetchRequests = async ({ ...params }) => {
+  const { data } = await axios.get(BASE_API + '/requested-items', {
+    params: params,
+  })
   return data
 }
 
@@ -82,6 +87,24 @@ export const fetchRequestsFormatted = async () => {
 
   return groupedDataArr
 }
+
+export const fetchPaginatedRequests = async ({ pageParam = 1, ...params }) => {
+  const res = await axios.get(BASE_API + `/requested-items`, {
+    params: {
+      ...params,
+      page: pageParam,
+      pageSize: PAGE_SIZE,
+    },
+  })
+
+  return {
+    data: res.data,
+    totalCount: Number(res.headers['x-total-count']),
+    pageSize: res.data?.length,
+    pageParam: pageParam,
+  }
+}
+
 export const showRequest = async (id) => {
   const { data } = await axios.get(BASE_API + `/requested-items/${id}`)
   return data
@@ -131,8 +154,13 @@ export const removeOrderMutation = async (id) => {
 
 // #region ═══════════ SUPPLIERS ═══════════ //
 export const fetchSuppliers = async () => {
-  // await new Promise((res) => setTimeout(res, 1000))
+  // await new Promise((res) => setTimeout(res, 5000))
   const { data } = await axios.get(BASE_API + '/suppliers')
+  return data
+}
+
+export const showSupplier = async (id) => {
+  const { data } = await axios.get(BASE_API + `/suppliers/${id}`)
   return data
 }
 export const addSupplierMutation = async (newData) => {

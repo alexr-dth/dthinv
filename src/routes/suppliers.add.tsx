@@ -65,7 +65,7 @@ function RouteComponent() {
             item_desc: i['desc'],
             item_price: parseFloat(i['price']),
             item_image: i['image'],
-            order_threshold: i['threshold'],
+            default_order_qty: i['threshold'],
           }))
 
         if (newItems.length) {
@@ -227,6 +227,7 @@ const NewSupplierItem = ({
           <input
             name="price"
             type="number"
+            step="0.01"
             placeholder="Price"
             className="form-control"
           />

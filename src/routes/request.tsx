@@ -177,7 +177,7 @@ const ManualSearchModal = ({ confirmCallback, closeModal }) => {
     error,
     dataUpdatedAt,
   } = usePaginatedQuery({
-    queryKey: ['items'],
+    queryKey: ['items', "paginated"],
     queryFn: fetchPaginatedItems,
     enabled: newSupplierModal,
   })

@@ -76,7 +76,9 @@ function RouteComponent() {
       )}
 
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
-        <div className='text-center font-bold rounded bg-red-50 text-red-900 border text-lg py-2 my-2'>UI MOCKUP ONLY</div>
+        <div className="text-center font-bold rounded bg-red-50 text-red-900 border text-lg py-2 my-2">
+          UI MOCKUP ONLY
+        </div>
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
@@ -206,6 +208,7 @@ const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
           <input
             name="price"
             type="number"
+            step="0.01"
             placeholder="$100.00"
             defaultValue={data?.item_price}
             className="w-full border rounded p-2"

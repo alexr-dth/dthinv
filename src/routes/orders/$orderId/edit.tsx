@@ -322,6 +322,7 @@ const RequestedProductUpdateCard = ({ data, editRequestedItem }) => {
               <label className="text-xs font-bold">Quoted Price</label>
               <input
                 type="number"
+                step="0.01"
                 className="w-full text-lg ps-1 focus:outline-0 border-b"
                 defaultValue={
                   data.quoted_price
