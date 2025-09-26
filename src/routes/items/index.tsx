@@ -409,7 +409,7 @@ const AddItemModal = ({ closeModal }) => {
                 <input
                   name="threshold"
                   type="number"
-                  placeholder="(e.g. 10, 20, 30...)"
+                  placeholder="Default reorder quantity(e.g. 10, 20, 30...)"
                   className="form-control"
                 />
               </div>

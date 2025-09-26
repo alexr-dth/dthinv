@@ -1,6 +1,8 @@
 import { fetchOrderById } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
+import totalPrice from '@/utils/totalPrice'
+import totalUnits from '@/utils/totalUnits'
 import { useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
@@ -81,7 +83,7 @@ function RouteComponent() {
             params={{ orderId }}
             className="action-link !ps-0"
           >
-            Update
+            Update Quote
           </Link>
         </div>
 
@@ -128,10 +130,8 @@ function RouteComponent() {
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
-            <span
-              className={`status-badge ${order.status || 'undefined'} flex-shrink-1`}
-            >
-              {order.status.replace('_', ' ') || 'undefined'}
+            <span className={`status-badge ${order.status} flex-shrink-1`}>
+              {order.status.replace('_', ' ')}
             </span>
           </div>
         </div>
@@ -139,7 +139,7 @@ function RouteComponent() {
         <div className="font-bold text-sm mt-10">Products included:</div>
         <div className="space-y-2">
           <SupplierProductSetWithPrice
-            productList={order.requested_items}
+            requestedItems={order.requested_items}
             supplier={order.supplier}
           />
         </div>
@@ -201,17 +201,8 @@ function RouteComponent() {
   )
 }
 
-const SupplierProductSetWithPrice = ({ supplier, productList }) => {
+const SupplierProductSetWithPrice = ({ supplier, requestedItems }) => {
   const [expanded, setExpanded] = useState(false)
-
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { requested_price: p = 0, requested_quantity: q }) => sum + p * q,
-      0,
-    )
-
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { requested_quantity: q }) => sum + q, 0)
 
   return (
     <div>
@@ -224,7 +215,7 @@ const SupplierProductSetWithPrice = ({ supplier, productList }) => {
             <h5 className="text-lg font-semibold uppercase">{supplier.name}</h5>
             {!expanded && (
               <span className="text-xs text-gray-500">
-                ({productList.length || 0} request/s)
+                ({requestedItems.length || 0} request/s)
               </span>
             )}
           </div>
@@ -234,17 +225,17 @@ const SupplierProductSetWithPrice = ({ supplier, productList }) => {
 
         <div className={`px-2 pb-2 ${!expanded && `hidden`}`}>
           <ul className="space-y-2 divide-y divide-gray-400 pb-2">
-            {productList.map((item) => (
-              <RequestedProductProcessingCard key={item.id} data={item} />
+            {requestedItems.map((rItem) => (
+              <RequestedProductProcessingCard key={rItem.id} data={rItem} />
             ))}
           </ul>
 
           <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
             <div className="text-sm">
-              Total ({productList.length || 0} requests/
-              {totalUnits(productList)} units):{' '}
+              Total ({requestedItems.length || 0} requests/
+              {totalUnits(requestedItems)} units):{' '}
               <span className="font-bold text-xl">
-                ${totalPrice(productList).toFixed(2)}
+                ${totalPrice(requestedItems).toFixed(2)}
               </span>
             </div>
           </div>
@@ -259,6 +250,7 @@ const SupplierProductSetWithPrice = ({ supplier, productList }) => {
 const RequestedProductProcessingCard = ({ data }) => {
   const [expanded, setExpanded] = useState(false)
   const item = data.item || {}
+  console.log(data)
   return (
     <div className="mt-2">
       <div className="flex items-stretch gap-2 mb-1 ">
@@ -296,20 +288,27 @@ const RequestedProductProcessingCard = ({ data }) => {
           <div className="flex [&>div]:flex-1 gap-3">
             <div>
               <label className="text-xs font-bold">Quoted Qty</label>
-              <div className="text-gray-500">
-                {data.requested_quantity
-                  ? data.requested_quantity
-                  : data.quoted_quantity}
+              <div
+                className={
+                  !data.is_quoted
+                    ? 'text-gray-500'
+                    : 'text-blue-800 font-semibold'
+                }
+              >
+                {data.quoted_quantity} {!data.is_quoted && <span>??</span>}
               </div>
             </div>
             <div>
               <label className="text-xs font-bold">Quoted Price</label>
-              <div className="text-gray-500">
-                $
-                {(data.requested_price
-                  ? data.requested_price
-                  : data.quoted_price || 0
-                ).toFixed(2)}
+              <div
+                className={
+                  !data.is_quoted
+                    ? 'text-gray-500'
+                    : 'text-blue-800 font-semibold'
+                }
+              >
+                ${data.quoted_price.toFixed(2)}{' '}
+                {!data.is_quoted && <span>??</span>}
               </div>
             </div>
           </div>
@@ -324,13 +323,39 @@ const RequestedProductProcessingCard = ({ data }) => {
       </button>
 
       {expanded && (
-        <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
+        <div className="text-xs leading-4 text-gray-500 mb-4 px-2">
+          {data.order_id && (
+            <div>
+              <span className="font-bold">Order Id: </span>{' '}
+              <Link
+                to="/orders/$orderId"
+                params={{ orderId: data.order_id }}
+                className="action-link underline"
+              >
+                {data.order_id}
+              </Link>
+            </div>
+          )}
+
+          <div>
+            <span className="font-bold">Requested by: </span>
+            {data.type === 'system'
+              ? 'SYSTEM'
+              : (data.requester?.username ?? 'n/a')}
+          </div>
+          {data.evaluator_id && (
+            <div>
+              <span className="font-bold">Evaluated by: </span>
+              {data.evaluator?.username ?? 'n/a'}
+            </div>
+          )}
+
           <div>
             <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+            {item.item_desc}
           </div>
           <div>
-            <span className="font-bold">Notes: </span> n/a
+            <span className="font-bold">Notes: </span> {data.notes || 'n/a'}
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
 import { fetchPaginatedRequests } from '@/api/api'
 import PendingRequestedCard from '@/components/Cards/PendingRequestedCard'
+import EmptyList from '@/components/EmptyList'
 
 const groupDataArr = (data = []) => {
   return data.reduce((acc, row) => {
@@ -105,12 +106,9 @@ function RouteComponent() {
           </button>
         </div>
 
-        {itemsData?.length < 1 ? (
-          <>
-            <div className="empty-list mt-5">empty list</div>
-          </>
-        ) : (
-          <>
+        <EmptyList
+          iterable={itemsData}
+          nonEmpty={
             <div className="space-y-8">
               {itemsData.map((group, index) => (
                 <div key={index}>
@@ -127,8 +125,8 @@ function RouteComponent() {
                 </div>
               ))}
             </div>
-          </>
-        )}
+          }
+        />
 
         <div className="mt-5 text-center mb-5">
           <div className="text-xs mb-4 font-light text-gray-400">
@@ -250,7 +248,7 @@ const ProcessingRequestedCard = ({ data }) => {
   const item = data.item
 
   return (
-    <div className="mt-2   border-amber-400 border-s-5 rounded-tl-md rounded-bl-md">
+    <div className="mt-2   border-amber-400 border-s-5 rounded-s-md">
       <div className="flex items-stretch gap-2 mb-1">
         <div className="w-1/4 self-center">
           <img
@@ -338,7 +336,7 @@ const CompleteRequestedCard = ({ data }) => {
   const item = data.item
 
   return (
-    <div className="mt-2 opacity-60   border-green-600 border-s-5 rounded-tl-md rounded-bl-md">
+    <div className="mt-2 opacity-60   border-green-600 border-s-5 rounded-s-md">
       <div className="flex items-stretch gap-2 mb-1">
         <div className="w-1/4 self-center">
           <img
@@ -426,7 +424,7 @@ const DeniedRequestedCard = ({ data }) => {
   const item = data.item
 
   return (
-    <div className="mt-2 opacity-60   border-gray-400 border-s-5 rounded-tl-md rounded-bl-md">
+    <div className="mt-2 opacity-60   border-gray-400 border-s-5 rounded-s-md">
       <div className="flex items-stretch gap-2 mb-1">
         <div className="w-1/4 self-center">
           <img

@@ -5,6 +5,8 @@ import {
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
+import totalPrice from '@/utils/totalPrice'
+import totalUnits from '@/utils/totalUnits'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createFileRoute,
@@ -65,7 +67,8 @@ function RouteComponent() {
         name: form.elements['order_name']?.value,
         notes: form.elements['order_notes']?.value,
         supplier_tracking_id: form.elements['order_tracking_number']?.value,
-        status: form.elements['order_status']?.value,
+        // status: form.elements['order_status']?.value,
+        status: 'await_deliver',
       })
       toast.success('Order updated')
 
@@ -74,6 +77,7 @@ function RouteComponent() {
           id: r.id,
           quoted_quantity: r.quoted_quantity,
           quoted_price: r.quoted_price,
+          is_quoted: true,
         })
       })
       await Promise.all(asyncUpdateRequests)
@@ -170,12 +174,15 @@ function RouteComponent() {
 
           <div>
             <span className="font-bold text-sm">Status:</span> <br />
-            <select name="order_status" className="form-control min-w-1/2">
+            {/* <select name="order_status" className="form-control min-w-1/2">
               <option value="await_quote">await_quote</option>
               <option value="await_deliver">await_deliver</option>
               <option value="fulfilled_complete">fulfilled_complete</option>
               <option value="fulfilled_missing">fulfilled_missing</option>
-            </select>
+            </select> */}
+            <span className={`status-badge ${order.status} flex-shrink-1`}>
+              {order.status.replace('_', ' ')}
+            </span>
           </div>
         </form>
 
@@ -190,9 +197,16 @@ function RouteComponent() {
 
         <div className="border-t-8 text-end mt-5 pt-2 mb-10"></div>
 
-        <button className="btn w-full" form="update-order-form">
-          Update
-        </button>
+        <i className="page-notes">
+          Update the order and its items, then set the status to
+          'await_delivery'.
+        </i>
+        {!order.status.startsWith('fulfilled_') && (
+          <button className="btn w-full" form="update-order-form">
+            {order.status === 'await_quote' && "Finalize Order's Quote"}
+            {order.status === 'await_deliver' && "Update Order's Quote"}
+          </button>
+        )}
       </div>
     </>
   )
@@ -204,15 +218,6 @@ const SupplierProductSetWithPrice = ({
   editRequestedItem,
 }) => {
   const [expanded, setExpanded] = useState(true)
-
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { requested_price: p = 0, requested_quantity: q }) => sum + p * q,
-      0,
-    )
-
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { requested_quantity: q }) => sum + q, 0)
 
   return (
     <div>
@@ -236,7 +241,7 @@ const SupplierProductSetWithPrice = ({
         <div className={`px-2 pb-2 ${!expanded && `hidden`}`}>
           <ul className="space-y-2 divide-y divide-gray-400 pb-2">
             {productList.map((item) => (
-              <RequestedProductUpdateCard
+              <ProcessingRequestedUpdateCard
                 key={item.id}
                 data={item}
                 editRequestedItem={editRequestedItem}
@@ -259,7 +264,7 @@ const SupplierProductSetWithPrice = ({
   )
 }
 
-const RequestedProductUpdateCard = ({ data, editRequestedItem }) => {
+const ProcessingRequestedUpdateCard = ({ data, editRequestedItem }) => {
   const [expanded, setExpanded] = useState(false)
   const item = data.item || {}
   return (
@@ -302,11 +307,7 @@ const RequestedProductUpdateCard = ({ data, editRequestedItem }) => {
               <input
                 type="number"
                 className="w-full text-lg ps-1 focus:outline-0 border-b"
-                defaultValue={
-                  data.quoted_quantity
-                    ? data.quoted_quantity
-                    : data.requested_quantity
-                }
+                defaultValue={data.quoted_quantity}
                 onChange={(e) =>
                   editRequestedItem((prev) =>
                     (prev || []).map((i) =>
@@ -324,11 +325,7 @@ const RequestedProductUpdateCard = ({ data, editRequestedItem }) => {
                 type="number"
                 step="0.01"
                 className="w-full text-lg ps-1 focus:outline-0 border-b"
-                defaultValue={
-                  data.quoted_price
-                    ? data.quoted_price
-                    : data.requested_price || 0
-                }
+                defaultValue={data.quoted_price}
                 onChange={(e) =>
                   editRequestedItem((prev) =>
                     (prev || []).map((i) =>

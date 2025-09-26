@@ -63,8 +63,6 @@ textarea.form-control.required {
   @apply placeholder-shown:border-blue-500 placeholder-shown:focus:outline-blue-500;
 }
 
-
-
 input[type='file'].form-control {
   @apply py-2 file:cursor-pointer file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white;
 }
@@ -104,6 +102,25 @@ input[type='checkbox'] + label {
   @apply bg-gray-200 text-gray-900;
 }
 
+.border-fulfilled_complete {
+  @apply border-green-700;
+}
+
+.border-fulfilled_missing {
+  @apply border-red-700;
+}
+
+.border-await_quote {
+  @apply border-yellow-500;
+}
+
+.border-await_deliver {
+  @apply border-blue-700;
+}
+.border-undefined {
+  @apply border-gray-500;
+}
+
 .page-title {
   @apply text-2xl mb-3 font-bold;
 }
@@ -121,9 +138,9 @@ i.page-notes::before {
 }
 
 .modal-title {
-  @apply font-semibold mb-3 text-xl
+  @apply font-semibold mb-3 text-xl;
 }
 
 .empty-list {
-  @apply py-10 text-center border-dashed border-x rounded bg-gray-100 text-sm italic text-gray-400
+  @apply py-10 text-center border-dashed border-x rounded bg-gray-100 text-sm italic text-gray-400;
 }

@@ -22,6 +22,8 @@ import {
 import { LucideAlertTriangle } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import toast from 'react-hot-toast'
+import totalUnits from '@/utils/totalUnits'
+import totalPrice from '@/utils/totalPrice'
 
 const groupDataArr = (data = []) => {
   return data.reduce((acc, row) => {
@@ -129,7 +131,8 @@ function RouteComponent() {
             order_id: newOrderId,
             request_status: 'processing',
             requested_quantity: rItem.requested_quantity,
-            evaluator: authUser.id,
+            quoted_quantity: rItem.requested_quantity,
+            evaluator_id: authUser.id,
           })
         })
         await Promise.all(asyncUpdateRequests)
@@ -381,15 +384,6 @@ const SupplierProductSetWithPrice = ({
     )
   }
 
-  const totalPrice = (items = []) => {
-    return items.reduce(
-      (sum, { requested_price: p = 0, requested_quantity: q }) => sum + p * q,
-      0,
-    )
-  }
-  const totalUnits = (items = []) => {
-    return items.reduce((sum, { requested_quantity: q }) => sum + q, 0)
-  }
   return (
     <div>
       <div className="border rounded">
@@ -429,9 +423,9 @@ const SupplierProductSetWithPrice = ({
             <div className="text-end text-sm py-2 bg-gray-200 p-2 rounded shadow">
               <div className="text-sm">
                 Total ({requestedItems?.length || 0} requests/
-                {totalUnits(requestedItems)} units):{' '}
+                {totalUnits(requestedItems, 'requested')} units):{' '}
                 <span className="font-bold text-xl">
-                  ${totalPrice(requestedItems).toFixed(2)}
+                  ${totalPrice(requestedItems, 'requested').toFixed(2)}
                 </span>
               </div>
             </div>
@@ -584,7 +578,7 @@ const AddRequestedModal = ({
             <div className="space-y-1 divide-y divide-gray-200">
               {/* instead of supplier set, only requested items with date label */}
               {(set.suppliers[0]?.requested_items || []).map((reqItem) => {
-                if (reqItem.request_status != "pending") return null
+                if (reqItem.request_status != 'pending') return null
                 return (
                   <PendingRequestedCard
                     key={reqItem.id}

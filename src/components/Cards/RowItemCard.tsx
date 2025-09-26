@@ -63,10 +63,10 @@ export default function RowItemCard({ data = {}, actions = {} }) {
         <div className="text-xs leading-4 text-gray-500 mb-4 space-y-2 px-2">
           <div>
             <span className="font-bold">Description: </span>
-            1-1/4 in. x 1-1/2 in. x 10 ft. Galvanized Steel Drip Edge Flashing
+            {data.item_desc || 'n/a'}
           </div>
           <div>
-            <span className="font-bold">Notes: </span> n/a
+            <span className="font-bold">Notes: </span> {data.notes || 'n/a'}
           </div>
         </div>
       )}

@@ -177,7 +177,7 @@ const ManualSearchModal = ({ confirmCallback, closeModal }) => {
     error,
     dataUpdatedAt,
   } = usePaginatedQuery({
-    queryKey: ['items', "paginated"],
+    queryKey: ['items', 'paginated'],
     queryFn: fetchPaginatedItems,
     enabled: newSupplierModal,
   })
@@ -305,7 +305,9 @@ const ConfirmScanModal = ({ data, closeModal }) => {
       await createRequest({
         item_id: data.id,
         requested_price: data.item_price,
+        quoted_price: data.item_price,
         requested_quantity: data.default_order_qty,
+        quoted_quantity: data.default_order_qty,
         type: 'manual',
         request_status: 'pending',
         requester_id: 'd847766a-c8ca-461b-abc3-c45b5a11e710', // John Doe

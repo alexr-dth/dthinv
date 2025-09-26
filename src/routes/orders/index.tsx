@@ -1,7 +1,10 @@
 import { fetchItems, fetchOrders } from '@/api/api'
+import EmptyList from '@/components/EmptyList'
 import ErrorScreen from '@/components/ErrorScreen'
 import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
+import totalPrice from '@/utils/totalPrice'
+import totalUnits from '@/utils/totalUnits'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideMenu } from 'lucide-react'
@@ -73,37 +76,41 @@ function RouteComponent() {
           setFilteredData={() => {}}
         />
 
-        <ul className="divide-y-2 divide-gray-400">
-          {orders.map((order) => (
-            <OrderSetCard data={order} status={'approved'} />
-          ))}
-        </ul>
+        <EmptyList
+          iterable={orders}
+          nonEmpty={
+            <ul className="space-y-1">
+              {orders.map((order) => (
+                <OrderCard key={order.id} data={order} />
+              ))}
+            </ul>
+          }
+        />
       </div>
     </>
   )
 }
 
-const OrderSetCard = ({ data: order, status }) => {
+const OrderCard = ({ data: order }) => {
   const [optionExpanded, setOptionExpanded] = useState(false)
 
-  const totalPrice = (items = []) =>
-    items.reduce(
-      (sum, { price = 0, approved_qty }) => sum + price * approved_qty,
-      0,
-    )
 
-  const totalUnits = (items = []) =>
-    items.reduce((sum, { approved_qty }) => sum + approved_qty, 0)
+
+
+
+  console.log(order)
 
   return (
-    <li className="flex items-start gap-2 min-h-30 overflow-visible py-4">
+    <li
+      className={`flex items-start gap-2 min-h-30 overflow-visible py-3 px-2 border border-s-5 rounded-md border-${order.status}`}
+    >
       <div className="truncate self-stretch flex flex-col justify-between flex-1">
         <div className="flex-1/4 text-xs flex">
           <span className="font-bold me-2 truncate ">
             {order.supplier?.name || 'n/a'}
           </span>
           <span className="text-gray-500 truncate flex-shrink-0 flex-1/3">
-            {order.supplier_tracking_id || 'NO-SUPPLIER-TRACKING-ID'}
+            {order.supplier_tracking_id || 'MISSING-SUPPLIER-TRACKING-ID'}
           </span>
         </div>
         <div className="text-wrap line-clamp-2 text-lg leading-5 pb-2 mb-2">
@@ -115,17 +122,16 @@ const OrderSetCard = ({ data: order, status }) => {
             params={{ orderId: order.id }}
             className="underline text-blue-500"
           >
-            #{order.id || 'NO-INTERNAL-TRACKING-YET'}
+            #{order.id || 'n/a'}
           </Link>
         </div>
         <div className="flex-1/4 text-sm flex items-center justify-between gap-1">
-          <span
-            className={`status-badge ${'quote-requested' || 'undefined'} flex-shrink-1`}
-          >
-            {'quote-requested'.replace('-', ' ') || 'undefined'}
+          <span className={`status-badge ${order.status} flex-shrink-1`}>
+            {order?.status.replace('_', ' ') || 'undefined'}
           </span>
-          <span className="font-semibold flex-grow-0 flex-shrink-0 w-1/3 truncate text-end">
-            ${totalPrice(order.items).toFixed(2) || 'n/a'}
+          <span className="font-semibold flex-grow-1 flex-shrink-0 w-1/3 truncate text-end">
+            ${totalPrice(order.requested_items).toFixed(2) || 'n/a'}/
+            {totalUnits(order.requested_items)} pcs.
           </span>
         </div>
       </div>
@@ -147,7 +153,7 @@ const OrderSetCard = ({ data: order, status }) => {
                 to="/orders/$orderId/edit"
                 params={{ orderId: order.id }}
               >
-                Update Order
+                Update Quote
               </Link>
               <button
                 className="text-lg py-1 px-3 text-black text-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
