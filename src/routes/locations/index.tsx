@@ -1,10 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { LucideGripVertical, LucideMenu } from 'lucide-react'
-import JsBarcode from 'jsbarcode'
+import { Children, useEffect, useMemo, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import { ReactSortable } from 'react-sortablejs'
-import PageLoader from '@/components/PageLoader'
 import {
   addLocationMutation,
   editLocationMutation,
@@ -12,52 +10,48 @@ import {
   removeLocationMutation,
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
-import toast from 'react-hot-toast'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import PageLoader from '@/components/PageLoader'
+import { LucideGripVertical, LucideMenu } from 'lucide-react'
+import JsBarcode from 'jsbarcode'
 
-const depthColors = [
-  'bg-blue-300 text-blue-900', // Level 1
-  'bg-orange-200 text-orange-900', // Level 2
-  'bg-teal-200 text-teal-900', // Level 3
-  'bg-red-200 text-red-900', // Level 4
-  'bg-green-200 text-green-900', // Level 5
-  'bg-indigo-200 text-indigo-900', // Level 6
-  'bg-yellow-200 text-yellow-900', // Level 7
-  'bg-pink-200 text-pink-900', // Level 8
-  'bg-purple-200 text-purple-900', // Level 9
-  'bg-gray-200 text-gray-900', // Level 10
-]
-
-
-
-// TODO: location CRUD is functioning, only the sorting is buggy alaso search functionality not implement
-
-// Helper
-const buildTree = (data, parentId = '') => {
-  return data
-    .filter((item) => item.parentId === parentId)
-    .map((item) => ({
-      ...item,
-      children: buildTree(data, item.id),
-    }))
-}
-
-const sortOrder = (data) =>
-  (data || []).sort((a, b) => a.order_weight - b.order_weight)
-
-// MAIN APP
 export const Route = createFileRoute('/locations/')({
   component: RouteComponent,
 })
 
-function RouteComponent() {
-  const queryClient = useQueryClient()
+// use modulo to cycle 0-9
+const depthColors = [
+  'not-only:bg-blue-100 border-s-blue-500 text-blue-900', // Level 1
+  'not-only:bg-orange-100 border-s-orange-500 text-orange-900', // Level 2
+  'not-only:bg-teal-100 border-s-teal-500 text-teal-900', // Level 3
+  'not-only:bg-red-100 border-s-red-500 text-red-900', // Level 4
+  'not-only:bg-green-100 border-s-green-500 text-green-900', // Level 5
+  'not-only:bg-indigo-100 border-s-indigo-500 text-indigo-900', // Level 6
+  'not-only:bg-yellow-100 border-s-yellow-500 text-yellow-900', // Level 7
+  'not-only:bg-pink-100 border-s-pink-500 text-pink-900', // Level 8
+  'not-only:bg-purple-100 border-s-purple-500 text-purple-900', // Level 9
+  'not-only:bg-gray-100 border-s-gray-500 text-gray-900', // Level 10
+]
 
-  const [expandedAll, setExpandedAll] = useState(false)
-  const [activeModal, setActiveModal] = useState<{
-    name: string
-    data?: any
-  } | null>(null)
+const reverseTree = (tree) => {
+  const result = []
+  const traverse = (nodes) => {
+    for (const node of nodes) {
+      const { children, ...rest } = node
+      result.push(rest)
+      if (children && children.length) {
+        traverse(children)
+      }
+    }
+  }
+  traverse(tree)
+  return result
+}
+
+function RouteComponent() {
+  const [expandAll, setExpandAll] = useState(false)
+  const [expandedById, setExpandedById] = useState({})
+  const [activeModal, setActiveModal] = useState(null)
+  const [list, setList] = useState([])
 
   const {
     data: locations = [],
@@ -67,97 +61,32 @@ function RouteComponent() {
   } = useQuery({
     queryKey: ['locations'],
     queryFn: fetchLocations,
-    select: (fetched) => sortOrder(fetched),
   })
-
-  const [list, setList] = useState([])
 
   useEffect(() => {
-    setList(locations || [])
+    setExpandedById((prev) => {
+      const next = {}
+      locations.forEach(({ id }) => {
+        next[id] = prev[id] ?? false
+      })
+      return next
+    })
+    setList(locations)
   }, [dataUpdatedAt])
 
-  const { mutateAsync: createLocation } = useMutation({
-    mutationFn: addLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
-  })
-
-  const { mutateAsync: patchLocation } = useMutation({
-    mutationFn: editLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
-  })
-
-  const { mutateAsync: deleteLocation } = useMutation({
-    mutationFn: removeLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
-  })
-
-  const closeModal = () => setActiveModal(null)
-
-  const handleAddLocation = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector("button[type='submit']")
-    btn.disabled = true
-
-    try {
-      const newLocation = {
-        name: form.elements['name']?.value,
-        barcode_qr: form.elements['barcode_qr']?.value,
-        description: form.elements['description']?.value,
-        notes: form.elements['notes']?.value,
-        parent_id: form.elements['parentId']?.value || null,
-        order_weight: Date.now(),
+  useEffect(() => {
+    setExpandedById((prev) => {
+      const next = {}
+      for (const key in prev) {
+        next[key] = expandAll
       }
-      await createLocation(newLocation)
-      closeModal()
-      toast.success('Location created')
-    } catch (errror) {
-      console.log(error)
-      toast.error('Process failed')
-    } finally {
-      btn.disabled = false
-    }
-  }
+      return next
+    })
+  }, [expandAll])
 
-  const handleEditLocation = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector("button[type='submit']")
-    btn.disabled = true
-    try {
-      await patchLocation({
-        id: form.elements['id']?.value,
-        name: form.elements['name']?.value,
-        barcode_qr: form.elements['barcode_qr']?.value,
-        description: form.elements['description']?.value,
-        notes: form.elements['notes']?.value,
-      })
-      closeModal()
-      toast.success('Location updated')
-    } catch (error) {
-      console.log(error)
-      toast.error('Process failed')
-    } finally {
-      btn.disabled = false
-    }
-  }
-
-  const handleRemoveLocation = async (e, id) => {
-    e.preventDefault()
-    const btn = e.target
-    btn.disabled = true
-    try {
-      await deleteLocation(id)
-      closeModal()
-      toast.success('Location deleted')
-    } catch (error) {
-      console.log(error)
-      toast.error('Process failed')
-    } finally {
-      btn.disabled = false
-    }
-  }
-
+  const { mutateAsync: patchLocationWeight } = useMutation({
+    mutationFn: editLocationMutation,
+  })
   const handleOrderChange = async (evt, listed) => {
     try {
       const { oldIndex, newIndex } = evt
@@ -167,7 +96,7 @@ function RouteComponent() {
         oldIndex === newIndex
       )
         return
-      const moved = listed[oldIndex]
+      const moved = { ...listed[oldIndex] }
       const targetIndex = newIndex > oldIndex ? newIndex + 1 : newIndex
 
       const before = listed[targetIndex - 1] ?? null
@@ -191,12 +120,16 @@ function RouteComponent() {
       moved.children = undefined
       moved.chosen = undefined
       moved.selected = undefined
-      await patchLocation(moved)
+      await patchLocationWeight({
+        id: moved.id,
+        order_weight: moved.order_weight,
+      })
     } catch (err) {
-      toast.error('Server error')
+      toast.error('Error updating server')
     }
   }
 
+  const closeModal = () => setActiveModal(null)
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
   return (
@@ -206,33 +139,26 @@ function RouteComponent() {
           <div className="w-dvw max-w-md">
             {activeModal.name == 'addLocation' && (
               <AddLocationModal
-                cancelCallback={closeModal}
-                saveCallback={handleAddLocation}
+                data={activeModal.data}
+                closeModal={closeModal}
+              />
+            )}
+
+            {activeModal.name == 'editLocation' && (
+              <EditLocationModal
+                data={activeModal.data}
+                closeModal={closeModal}
               />
             )}
 
             {activeModal.name == 'locationImage' && (
-              <LocationImageModal cancelCallback={closeModal} />
+              <LocationImageModal
+                data={activeModal.data}
+                closeModal={closeModal}
+              />
             )}
             {activeModal.name == 'locationBarcode' && (
-              <BarcodeModal
-                data={activeModal.data}
-                cancelCallback={closeModal}
-              />
-            )}
-            {activeModal.name == 'editLocation' && (
-              <EditLocationModal
-                data={activeModal.data}
-                cancelCallback={closeModal}
-                saveCallback={handleEditLocation}
-              />
-            )}
-            {activeModal.name == 'addChildLocation' && (
-              <AddChildLocationModal
-                data={activeModal.data}
-                cancelCallback={closeModal}
-                saveCallback={handleAddLocation}
-              />
+              <BarcodeModal data={activeModal.data} closeModal={closeModal} />
             )}
           </div>
         </div>
@@ -263,38 +189,37 @@ function RouteComponent() {
             Add Location
           </button>
 
-          <button className="action-link" onClick={() => setExpandedAll(true)}>
-            Expand
-          </button>
-
-          <button className="action-link" onClick={() => setExpandedAll(false)}>
-            Collapse
+          <button
+            className="action-link"
+            onClick={() => {
+              setExpandAll(!expandAll)
+            }}
+          >
+            {expandAll ? 'Collapse' : 'Expand'} All
           </button>
         </div>
-
-        {/* TODO: Change this component to something that will make sense in this context */}
-        <ItemSearchBarWithFilters
-          originalData={[]}
-          setFilteredData={() => {}}
-        />
-
         <ReactSortable
-          className="space-y-3"
           list={list}
           setList={setList}
-          animation={200}
-          tag="ul"
+          className="space-y-1"
+          animation={150}
           onEnd={(evt) => handleOrderChange(evt, list)}
         >
-          {list.map((node) => (
-            <LocationNode
-              key={node.id}
-              node={node}
+          {list.map((childData) => (
+            <ExpandableRow
+              closeModal={closeModal}
               setActiveModal={setActiveModal}
-              handleOrderChange={handleOrderChange}
-              handleRemoveLocation={handleRemoveLocation}
-              expandedToggle={expandedAll}
-              className={node.children?.length < 1 ? 'mb-0.5' : ''}
+              expandAll={expandAll}
+              key={childData.id}
+              data={childData}
+              childList={childData.children}
+              expanded={expandedById[childData.id]}
+              toggleExpand={() =>
+                setExpandedById((prev) => ({
+                  ...prev,
+                  [childData.id]: !prev[childData.id],
+                }))
+              }
             />
           ))}
         </ReactSortable>
@@ -303,70 +228,169 @@ function RouteComponent() {
   )
 }
 
-// ADDITIONAL COMPONENTS
-const LocationNode = ({
-  node,
-  depth = 0,
+const ExpandableRow = ({
+  closeModal,
   setActiveModal,
-  handleOrderChange,
-  handleRemoveLocation,
-  expandedToggle,
-  className = '',
+  expandAll,
+  data,
+  childList = [],
+  expanded = false,
+  toggleExpand,
+  depth = 0,
 }) => {
-  const [expanded, setExpanded] = useState(expandedToggle)
-  const [optionExpanded, setOptionExpanded] = useState(false)
-  const [list, setList] = useState(node.children)
-  useEffect(() => {
-    setList(node.children)
-  }, [node])
+  const [expandedById, setExpandedById] = useState({})
+  const [menuExpanded, setMenuExpanded] = useState(false)
+  const queryClient = useQueryClient()
+
+  const [list, setList] = useState([])
 
   useEffect(() => {
-    setExpanded(expandedToggle)
-  }, [expandedToggle])
+    setExpandedById((prev) => {
+      const next = {}
+      childList.forEach(({ id }) => {
+        next[id] = prev[id] ?? false
+      })
+      return next
+    })
+    setList(childList)
+  }, [childList])
+
+  useEffect(() => {
+    setExpandedById((prev) => {
+      const next = {}
+      for (const key in prev) {
+        next[key] = expandAll
+      }
+      return next
+    })
+  }, [expandAll])
+
+  const { mutateAsync: deleteLocation } = useMutation({
+    mutationFn: removeLocationMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+  })
+  const handleRemoveLocation = async (e, id) => {
+    e.preventDefault()
+    const btn = e.target
+    btn.disabled = true
+    try {
+      await deleteLocation(id)
+      closeModal()
+      toast.success('Location deleted')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
+  const { mutateAsync: patchLocationWeight } = useMutation({
+    mutationFn: editLocationMutation,
+  })
+
+  const handleOrderChange = async (evt, listed) => {
+    try {
+      const { oldIndex, newIndex } = evt
+      if (
+        oldIndex === undefined ||
+        newIndex === undefined ||
+        oldIndex === newIndex
+      )
+        return
+      const moved = { ...listed[oldIndex] }
+      const targetIndex = newIndex > oldIndex ? newIndex + 1 : newIndex
+
+      const before = listed[targetIndex - 1] ?? null
+      const after = listed[targetIndex] ?? null
+
+      if (!after) {
+        moved.order_weight = before.order_weight + 1
+      } else if (!before) {
+        moved.order_weight = after.order_weight - 1
+      } else {
+        let tempWeight
+
+        if (before.order_weight + 1 < after.order_weight) {
+          tempWeight = before.order_weight + 1
+        } else {
+          tempWeight = (before.order_weight + after.order_weight) / 2
+        }
+        moved.order_weight = tempWeight
+      }
+
+      moved.children = undefined
+      moved.chosen = undefined
+      moved.selected = undefined
+      await patchLocationWeight({
+        id: moved.id,
+        order_weight: moved.order_weight,
+      })
+    } catch (err) {
+      toast.error('Error updating server')
+    }
+  }
 
   return (
-    <li
-      className={`space-y-0.5 cursor-move ` + className}
-      onClick={(e) => {
-        e.stopPropagation()
-        setExpanded(!expanded)
-      }}
-    >
-      <div
-        className={`${depthColors[depth]} w-full border-2 p-2 rounded flex gap-2 border-gray-700 items-center`}
+    <div className="ms-2">
+      <h5
+        className={`${depthColors[depth % 10]} ${childList.length && 'cursor-pointer'} border-s-5 pe-1 py-1 not-only:font-semibold flex gap-2 items-center`}
+        onClick={toggleExpand}
       >
-        <LucideGripVertical size={16} />
-        <strong className="truncate">{node.name}</strong>
-        <span className="text-black/80 text-xs truncate">
-          ({node.barcode_qr})
+        <LucideGripVertical size={16} className="cursor-grab" />
+        <strong className="truncate">{data.name}</strong>
+
+        <span className="text-black/40 text-xs truncate">
+          ({data.barcode_qr})
         </span>
-        {!expanded && node.children?.length > 0 && (
-          <span className="font-bold text-xs">
-            +{node.children?.length} more locations
-          </span>
+
+        {!expanded && childList.length > 0 && (
+          <span className="font-bold text-xs">+{childList.length} more</span>
         )}
 
         {/* actions */}
         <div className="ms-auto relative">
           <LucideMenu
-            size={32}
-            className=" p-1.5 cursor-pointer text-black"
+            size={24}
+            className="cursor-pointer "
             onClick={(e) => {
               e.stopPropagation()
-              setOptionExpanded(!optionExpanded)
+              setMenuExpanded(!menuExpanded)
             }}
           />
-          {optionExpanded && (
-            <div className="absolute border bg-white shadow p-1 rounded right-full top-0">
+          {menuExpanded && (
+            <div className="absolute border border-gray-400 bg-white shadow p-1 rounded right-full top-0 font-normal">
               <div className="flex flex-col divide-y divide-gray-400">
+                <button
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMenuExpanded(false)
+                    setActiveModal({ name: 'locationBarcode', data: data })
+                  }}
+                >
+                  Barcode
+                </button>
+
+                <button
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMenuExpanded(false)
+                    setActiveModal({ name: 'locationImage', data: data })
+                  }}
+                >
+                  Image
+                </button>
+
                 <Link
                   className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
-                    setOptionExpanded(false)
+                    setMenuExpanded(false)
                   }}
                   to="/locations/$locationId/items"
-                  params={{ locationId: node.id }}
+                  params={{ locationId: data.id }}
                 >
                   View Items
                 </Link>
@@ -375,49 +399,30 @@ const LocationNode = ({
                   className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
-                    setOptionExpanded(false)
-                    setActiveModal({ name: 'locationImage', data: node })
-                  }}
-                >
-                  Image
-                </button>
-                <button
-                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setOptionExpanded(false)
-                    setActiveModal({ name: 'locationBarcode', data: node })
-                  }}
-                >
-                  Barcode
-                </button>
-                <button
-                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setOptionExpanded(false)
-                    setActiveModal({ name: 'editLocation', data: node })
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setOptionExpanded(false)
-                    setActiveModal({ name: 'addChildLocation', data: node })
+                    setMenuExpanded(false)
+                    setActiveModal({ name: 'addLocation', data: data })
                   }}
                 >
                   Add section
                 </button>
 
                 <button
+                  className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-black text-nowrap cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMenuExpanded(false)
+                    setActiveModal({ name: 'editLocation', data: data })
+                  }}
+                >
+                  Edit
+                </button>
+
+                <button
                   className="text-lg py-1 px-3 disabled:line-through disabled:cursor-not-allowed disabled:opacity-50  text-red-500 text-nowrap cursor-pointer"
                   onClick={async (e) => {
                     e.stopPropagation()
-                    await handleRemoveLocation(e, node?.id || null)
-                    setOptionExpanded(false)
+                    await handleRemoveLocation(e, data?.id || null)
+                    setMenuExpanded(false)
                   }}
                 >
                   Delete
@@ -426,144 +431,88 @@ const LocationNode = ({
             </div>
           )}
         </div>
-      </div>
-
-      {expanded && node.children?.length > 0 && (
+      </h5>
+      {childList.length > 0 && expanded && (
         <ReactSortable
-          className="ms-3 space-y-2"
           list={list}
           setList={setList}
-          animation={200}
-          tag="ul"
+          className="space-y-1 mt-2 mb-4"
+          animation={150}
           onEnd={(evt) => handleOrderChange(evt, list)}
         >
-          {sortOrder(list).map((child) => (
-            <LocationNode
-              key={child.id}
-              node={child}
-              depth={depth + 1}
+          {list.map((childData) => (
+            <ExpandableRow
               setActiveModal={setActiveModal}
-              handleOrderChange={handleOrderChange}
-              expandedToggle={expandedToggle}
-              className={child.children?.length < 1 ? 'mb-0.5' : ''}
+              closeModal={closeModal}
+              expandAll={expandAll}
+              key={childData.id}
+              data={childData}
+              childList={childData.children}
+              expanded={expandedById[childData.id]}
+              toggleExpand={() =>
+                setExpandedById((prev) => ({
+                  ...prev,
+                  [childData.id]: !prev[childData.id],
+                }))
+              }
+              depth={depth + 1}
             />
           ))}
         </ReactSortable>
       )}
-    </li>
-  )
-}
-
-// MODALS
-const LocationImageModal = ({ cancelCallback }) => {
-  return (
-    <div className="bg-white rounded p-3 mx-3">
-      <img
-        src="/warehouse.jpg"
-        alt="warehouse image"
-        className="aspect-square w-full max-w-screen max-h-screen object-contain"
-      />
-      <button
-        className="border py-2 px-4 rounded mt-4 cursor-pointer w-full"
-        onClick={cancelCallback}
-      >
-        Close
-      </button>
     </div>
   )
 }
 
-const BarcodeModal = ({ data, cancelCallback }) => {
-  const barcodeRef = useRef(null)
+const AddLocationModal = ({ data = null, closeModal }) => {
+  const queryClient = useQueryClient()
+  const { mutateAsync: createLocation } = useMutation({
+    mutationFn: addLocationMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+  })
 
-  useEffect(() => {
-    if (data?.barcode_qr && barcodeRef.current) {
-      JsBarcode(barcodeRef.current, data.barcode_qr, {
-        format: 'CODE128',
-        lineColor: '#000',
-        width: 2,
-        height: 80,
-        displayValue: true,
+  const handleAddLocation = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = form.querySelector("button[type='submit']")
+    btn.disabled = true
+
+    try {
+      await createLocation({
+        name: form.elements['name']?.value,
+        barcode_qr: form.elements['barcode_qr']?.value,
+        description: form.elements['description']?.value,
+        notes: form.elements['notes']?.value,
+        parent_id: form.elements['parentId']?.value || null,
+        order_weight: Date.now(),
       })
+      closeModal()
+      toast.success('Location created')
+    } catch (error) {
+      console.log(error)
+      toast.error('Process failed')
+    } finally {
+      btn.disabled = false
     }
-  }, [data?.barcode_qr])
+  }
 
   return (
     <div className="bg-white rounded p-3 mx-3">
-      <svg ref={barcodeRef} className="w-full"></svg>
-      <button
-        className="border py-2 px-4 rounded mt-4 cursor-pointer w-full"
-        onClick={cancelCallback}
-      >
-        Close
-      </button>
-    </div>
-  )
-}
-
-const AddLocationModal = ({ saveCallback, cancelCallback }) => {
-  return (
-    <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold  mb-3 text-xl">Add location</h3>
+      <form onSubmit={handleAddLocation} method="post">
+        <h3 className="font-semibold  mb-3 text-xl">
+          Add {data != null && 'additional'} location
+        </h3>
         <div className="flex flex-col gap-1 ">
-          <input type="hidden" name="parentId" />
-          <input
-            name="name"
-            type="text"
-            placeholder="Location name"
-            className="w-full border rounded p-2"
-            required
-          />
-
-          <input
-            name="barcode_qr"
-            type="text"
-            placeholder="QR Code"
-            className="w-full border rounded p-2"
-            required
-          />
-
-          <textarea
-            name="description"
-            placeholder="Description"
-            className="w-full border rounded p-2"
-          />
-
-          <textarea
-            name="notes"
-            placeholder="Notes"
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        <div className="flex gap-2 mt-4">
-          <button className="btn flex-1" onClick={cancelCallback} type="button">
-            Close
-          </button>
-          <button className="btn flex-1" type="submit">
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
-  )
-}
-
-const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
-  return (
-    <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={saveCallback} method="post">
-        <h3 className="font-semibold mb-3 text-xl">Add additional location</h3>
-        <div className="flex flex-col gap-1">
           <input type="hidden" name="parentId" value={data?.id} />
 
-          <input
-            type="text"
-            className="w-full border rounded p-2 disabled:bg-gray-200 text-gray-500"
-            value={data?.name + ' - under'}
-            disabled
-          />
+          {data?.id && (
+            <input
+              type="text"
+              className="w-full border rounded p-2 disabled:bg-gray-200 text-gray-500"
+              value={data?.name + ' - under'}
+              disabled
+            />
+          )}
 
           <input
             name="name"
@@ -595,7 +544,7 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <button className="btn flex-1" onClick={cancelCallback} type="button">
+          <button className="btn flex-1" onClick={closeModal} type="button">
             Close
           </button>
           <button className="btn flex-1" type="submit">
@@ -607,10 +556,45 @@ const AddChildLocationModal = ({ data, saveCallback, cancelCallback }) => {
   )
 }
 
-const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
+const EditLocationModal = ({ data, closeModal }) => {
+  const queryClient = useQueryClient()
+
+  const { mutateAsync: patchLocation } = useMutation({
+    mutationFn: editLocationMutation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+  })
+
+  const handleEditLocation = async (e) => {
+    e.preventDefault()
+    const form = e.target
+    const btn = form.querySelector("button[type='submit']")
+    btn.disabled = true
+    try {
+      await toast.promise(
+        patchLocation({
+          id: form.elements['id']?.value,
+          name: form.elements['name']?.value,
+          barcode_qr: form.elements['barcode_qr']?.value,
+          description: form.elements['description']?.value,
+          notes: form.elements['notes']?.value,
+        }),
+        {
+          loading: 'Loading',
+          success: 'Location updated',
+          error: 'Process failed',
+        },
+      )
+      closeModal()
+    } catch (error) {
+      console.log(error)
+    } finally {
+      btn.disabled = false
+    }
+  }
+
   return (
     <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={saveCallback} method="post">
+      <form onSubmit={handleEditLocation} method="post">
         <h3 className="font-semibold mb-3 text-xl">
           Edit location information
         </h3>
@@ -652,7 +636,7 @@ const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <button className="btn flex-1" onClick={cancelCallback} type="button">
+          <button className="btn flex-1" onClick={closeModal} type="button">
             Close
           </button>
           <button className="btn flex-1" type="submit">
@@ -660,6 +644,52 @@ const EditLocationModal = ({ data, cancelCallback, saveCallback }) => {
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+const BarcodeModal = ({ data, closeModal }) => {
+  const barcodeRef = useRef(null)
+
+  useEffect(() => {
+    if (data?.barcode_qr && barcodeRef.current) {
+      JsBarcode(barcodeRef.current, data.barcode_qr, {
+        format: 'CODE128',
+        lineColor: '#000',
+        width: 2,
+        height: 80,
+        displayValue: true,
+      })
+    }
+  }, [data?.barcode_qr])
+
+  return (
+    <div className="bg-white rounded p-3 mx-3">
+      <svg ref={barcodeRef} className="w-full"></svg>
+      <button
+        className="border py-2 px-4 rounded mt-4 cursor-pointer w-full"
+        onClick={closeModal}
+      >
+        Close
+      </button>
+    </div>
+  )
+}
+
+const LocationImageModal = ({ data, closeModal }) => {
+  return (
+    <div className="bg-white rounded p-3 mx-3">
+      <img
+        src={data?.image || '/missing.png'}
+        alt="warehouse image"
+        className="aspect-square w-full max-w-screen max-h-screen object-contain"
+      />
+      <button
+        className="border py-2 px-4 rounded mt-4 cursor-pointer w-full"
+        onClick={closeModal}
+      >
+        Close
+      </button>
     </div>
   )
 }

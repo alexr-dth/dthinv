@@ -15,7 +15,9 @@ export const healthCheck = async () =>
 
 // #region ═══════════ ITEMS ═══════════ //
 export const fetchItems = async () => {
-  const { data } = await axios.get(BASE_API + '/items')
+  const { data } = await axios.get(BASE_API + '/items', {
+    params: { orderBy: 'created_at', orderDir: 'desc' },
+  })
   return data
 }
 
@@ -24,6 +26,8 @@ export const fetchPaginatedItems = async ({ pageParam = 1 }) => {
     params: {
       page: pageParam,
       pageSize: PAGE_SIZE,
+      orderBy: 'created_at',
+      orderDir: 'desc',
     },
   })
   return {
@@ -179,7 +183,12 @@ export const removeSupplierMutation = async (newData) => {
 
 // #region ═══════════ LOCATIONS ═══════════ //
 export const fetchLocations = async () => {
-  const { data } = await axios.get(BASE_API + '/locations')
+  const { data } = await axios.get(BASE_API + '/locations', {
+    params: {
+      orderBy: 'order_weight',
+      orderDir: 'asc',
+    },
+  })
 
   const buildTree = (data, parentId = null) => {
     return data

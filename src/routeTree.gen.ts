@@ -22,6 +22,7 @@ import { Route as InventoryIndexRouteImport } from './routes/inventory/index'
 import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
+import { Route as LocationsIndex2RouteImport } from './routes/locations/index2'
 import { Route as DevPdfRouteImport } from './routes/dev/pdf'
 import { Route as DevPage2RouteImport } from './routes/dev/page2'
 import { Route as DevPage1RouteImport } from './routes/dev/page1'
@@ -96,6 +97,11 @@ const OrdersNewRoute = OrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocationsIndex2Route = LocationsIndex2RouteImport.update({
+  id: '/locations/index2',
+  path: '/locations/index2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevPdfRoute = DevPdfRouteImport.update({
   id: '/dev/pdf',
   path: '/dev/pdf',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
   '/suppliers/add': typeof SuppliersAddRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
     | '/suppliers/add'
@@ -289,6 +301,7 @@ export interface RootRouteChildren {
   DevPage1Route: typeof DevPage1Route
   DevPage2Route: typeof DevPage2Route
   DevPdfRoute: typeof DevPdfRoute
+  LocationsIndex2Route: typeof LocationsIndex2Route
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
   SuppliersAddRoute: typeof SuppliersAddRoute
@@ -397,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/locations/index2': {
+      id: '/locations/index2'
+      path: '/locations/index2'
+      fullPath: '/locations/index2'
+      preLoaderRoute: typeof LocationsIndex2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/pdf': {
       id: '/dev/pdf'
       path: '/dev/pdf'
@@ -465,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevPage1Route: DevPage1Route,
   DevPage2Route: DevPage2Route,
   DevPdfRoute: DevPdfRoute,
+  LocationsIndex2Route: LocationsIndex2Route,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
   SuppliersAddRoute: SuppliersAddRoute,
