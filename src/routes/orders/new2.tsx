@@ -1,6 +1,6 @@
 import { fetchItems } from '@/api/api'
 import PageLoader from '@/components/PageLoader'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'

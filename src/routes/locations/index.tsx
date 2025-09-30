@@ -6,7 +6,7 @@ import { ReactSortable } from 'react-sortablejs'
 import {
   addLocationMutation,
   editLocationMutation,
-  fetchLocations,
+  fetchLocationsFormatted,
   removeLocationMutation,
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
@@ -59,8 +59,8 @@ function RouteComponent() {
     error,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ['locations'],
-    queryFn: fetchLocations,
+    queryKey: ['locations', 'formatted'],
+    queryFn: fetchLocationsFormatted,
   })
 
   useEffect(() => {
@@ -267,7 +267,8 @@ const ExpandableRow = ({
 
   const { mutateAsync: deleteLocation } = useMutation({
     mutationFn: removeLocationMutation,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['locations', 'formatted'] }),
   })
   const handleRemoveLocation = async (e, id) => {
     e.preventDefault()

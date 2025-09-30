@@ -8,11 +8,11 @@ import PageLoader from '@/components/PageLoader'
 import {
   addLocationMutation,
   editLocationMutation,
-  fetchLocations,
+  fetchLocationsFormatted,
   removeLocationMutation,
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import toast from 'react-hot-toast'
 
 const depthColors = [
@@ -52,7 +52,7 @@ function RouteComponent() {
     error,
   } = useQuery({
     queryKey: ['locations'],
-    queryFn: fetchLocations,
+    queryFn: fetchLocationsFormatted,
     select: (fetched) => sortOrder(fetched), // already cached, no need to memoized
   })
 

@@ -23,6 +23,7 @@ import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
 import { Route as LocationsIndex2RouteImport } from './routes/locations/index2'
+import { Route as ItemsItemIdRouteImport } from './routes/items/$itemId'
 import { Route as DevPdfRouteImport } from './routes/dev/pdf'
 import { Route as DevPage2RouteImport } from './routes/dev/page2'
 import { Route as DevPage1RouteImport } from './routes/dev/page1'
@@ -102,6 +103,11 @@ const LocationsIndex2Route = LocationsIndex2RouteImport.update({
   path: '/locations/index2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ItemsItemIdRoute = ItemsItemIdRouteImport.update({
+  id: '/items/$itemId',
+  path: '/items/$itemId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevPdfRoute = DevPdfRouteImport.update({
   id: '/dev/pdf',
   path: '/dev/pdf',
@@ -139,9 +145,9 @@ const LocationsLocationIdItemsRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const ItemsItemIdEditRoute = ItemsItemIdEditRouteImport.update({
-  id: '/items/$itemId/edit',
-  path: '/items/$itemId/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ItemsItemIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
+  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
+    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   DevPage1Route: typeof DevPage1Route
   DevPage2Route: typeof DevPage2Route
   DevPdfRoute: typeof DevPdfRoute
+  ItemsItemIdRoute: typeof ItemsItemIdRouteWithChildren
   LocationsIndex2Route: typeof LocationsIndex2Route
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
@@ -311,7 +324,6 @@ export interface RootRouteChildren {
   NotificationsIndexRoute: typeof NotificationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   RequestsIndexRoute: typeof RequestsIndexRoute
-  ItemsItemIdEditRoute: typeof ItemsItemIdEditRoute
   LocationsLocationIdItemsRoute: typeof LocationsLocationIdItemsRoute
   OrdersOrderIdEditRoute: typeof OrdersOrderIdEditRoute
   OrdersOrderIdIndexRoute: typeof OrdersOrderIdIndexRoute
@@ -417,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationsIndex2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/items/$itemId': {
+      id: '/items/$itemId'
+      path: '/items/$itemId'
+      fullPath: '/items/$itemId'
+      preLoaderRoute: typeof ItemsItemIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/pdf': {
       id: '/dev/pdf'
       path: '/dev/pdf'
@@ -468,13 +487,25 @@ declare module '@tanstack/react-router' {
     }
     '/items/$itemId/edit': {
       id: '/items/$itemId/edit'
-      path: '/items/$itemId/edit'
+      path: '/edit'
       fullPath: '/items/$itemId/edit'
       preLoaderRoute: typeof ItemsItemIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ItemsItemIdRoute
     }
   }
 }
+
+interface ItemsItemIdRouteChildren {
+  ItemsItemIdEditRoute: typeof ItemsItemIdEditRoute
+}
+
+const ItemsItemIdRouteChildren: ItemsItemIdRouteChildren = {
+  ItemsItemIdEditRoute: ItemsItemIdEditRoute,
+}
+
+const ItemsItemIdRouteWithChildren = ItemsItemIdRoute._addFileChildren(
+  ItemsItemIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -485,6 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevPage1Route: DevPage1Route,
   DevPage2Route: DevPage2Route,
   DevPdfRoute: DevPdfRoute,
+  ItemsItemIdRoute: ItemsItemIdRouteWithChildren,
   LocationsIndex2Route: LocationsIndex2Route,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
@@ -495,7 +527,6 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsIndexRoute: NotificationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   RequestsIndexRoute: RequestsIndexRoute,
-  ItemsItemIdEditRoute: ItemsItemIdEditRoute,
   LocationsLocationIdItemsRoute: LocationsLocationIdItemsRoute,
   OrdersOrderIdEditRoute: OrdersOrderIdEditRoute,
   OrdersOrderIdIndexRoute: OrdersOrderIdIndexRoute,

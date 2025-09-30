@@ -183,6 +183,11 @@ export const removeSupplierMutation = async (newData) => {
 
 // #region ═══════════ LOCATIONS ═══════════ //
 export const fetchLocations = async () => {
+  const { data } = await axios.get(BASE_API + '/locations')
+  return data
+}
+
+export const fetchLocationsFormatted = async () => {
   const { data } = await axios.get(BASE_API + '/locations', {
     params: {
       orderBy: 'order_weight',

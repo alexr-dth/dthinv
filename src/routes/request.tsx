@@ -12,7 +12,7 @@ import {
 } from '@/api/api'
 import GridItemCard from '@/components/Cards/GridItemCard'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 
 export const Route = createFileRoute('/request')({
   component: RouteComponent,

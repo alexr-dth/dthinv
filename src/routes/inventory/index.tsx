@@ -2,13 +2,14 @@ import { useTranslation } from 'react-i18next'
 import { fetchItems, fetchSuppliers } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import InventorySearchWithFilters from '@/components/Search/InventorySearchWithFilters'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideListFilter } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import GridItemCard from '@/components/Cards/GridItemCard'
+import GridInventoryCard from '@/components/Cards/GridInventoryCard'
 
 export const Route = createFileRoute('/inventory/')({
   component: RouteComponent,
@@ -106,11 +107,11 @@ function RouteComponent() {
           </Link>
         </div>
 
-        <ItemSearchBarWithFilters />
+        <InventorySearchWithFilters />
 
         <div className="grid grid-cols-2 gap-3 ">
           {data?.map((item) => (
-            <GridItemCard
+            <GridInventoryCard
               key={item.id}
               data={item}
               actions={({ data }) => (

@@ -1,7 +1,7 @@
 import { fetchItems, fetchLocationById } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'

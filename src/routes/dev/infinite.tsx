@@ -1,5 +1,5 @@
 import { fetchPaginatedItems } from '@/api/api'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { createFileRoute, Navigate } from '@tanstack/react-router'

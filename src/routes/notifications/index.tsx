@@ -1,4 +1,4 @@
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   LucideAlertTriangle,

@@ -3,7 +3,6 @@ import {
   authUser,
   editRequestMutation,
   fetchPaginatedRequests,
-  fetchRequestsFormatted,
   fetchRequests,
   fetchSuppliers,
   removeOrderMutation,

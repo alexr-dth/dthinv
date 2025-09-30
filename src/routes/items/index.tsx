@@ -14,7 +14,7 @@ import {
   removeItemMutation,
 } from '@/api/api'
 import InlineLoader from '@/components/InlineLoader'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
 import GridItemCard from '@/components/Cards/GridItemCard'
 import ErrorScreen from '@/components/ErrorScreen'

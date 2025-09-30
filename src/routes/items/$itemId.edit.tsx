@@ -1,7 +1,7 @@
 import {
   editItemMutation,
   fetchItems,
-  fetchLocations,
+  fetchLocationsFormatted,
   fetchSuppliers,
   showItem,
 } from '@/api/api'
@@ -53,8 +53,8 @@ function RouteComponent() {
         queryFn: fetchSuppliers,
       },
       {
-        queryKey: ['locations'],
-        queryFn: fetchLocations,
+        queryKey: ['locations', 'formatted'],
+        queryFn: fetchLocationsFormatted,
       },
     ],
   })

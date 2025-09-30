@@ -1,7 +1,7 @@
 import { fetchItems, fetchOrders } from '@/api/api'
 import EmptyList from '@/components/EmptyList'
 import ErrorScreen from '@/components/ErrorScreen'
-import ItemSearchBarWithFilters from '@/components/ItemSearchBarWithFilters'
+import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
 import totalPrice from '@/utils/totalPrice'
 import totalUnits from '@/utils/totalUnits'
