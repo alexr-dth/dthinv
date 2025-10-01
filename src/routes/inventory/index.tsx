@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { fetchItems, fetchSuppliers } from '@/api/api'
+import { fetchItems, fetchItemsInventory, fetchSuppliers } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
 import InventorySearchWithFilters from '@/components/Search/InventorySearchWithFilters'
@@ -8,8 +8,150 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { LucideListFilter } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import GridItemCard from '@/components/Cards/GridItemCard'
-import GridInventoryCard from '@/components/Cards/GridInventoryCard'
+import RowInventoryCard from '@/components/Cards/RowInventoryCard'
+
+const sampleObj = {
+  id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+  sku_number: '709237',
+  internet_sku_number: '206101783',
+  internal_sku: null,
+  dth_sku: null,
+  temp_internal_sku: 'DTH53787205',
+  material_id: 271,
+  upc: ['707392361367'],
+  supplier_id: 'e2e4046c-d953-4273-883d-0c965e79e971',
+  item_desc: '#8 x 1-1/4 in. #2 Phillips, Wafer-Head Wood Screw (100-Pack)',
+  item_desc_mandarin: '#8 x 1-1/4 英寸 #2 十字槽圆头木螺钉（100 件装）',
+  short_name: '#8 x 1-1/4" Phillips Wafer-Head Screws',
+  item_brand: 'Simpson Strong-Tie',
+  item_brand_mandarin: '辛普森强领带',
+  department_name: 'HARDWARE',
+  department_name_mandarin: '硬件',
+  item_details: null,
+  item_details_mandarin: null,
+  template: null,
+  item_price: 12.78,
+  default_order_qty: 6,
+  pack_size: 100,
+  label_size: null,
+  inventory: [
+    {
+      id: 'd042a2b7-4c94-47a9-aad6-1ff10b63a9d0',
+      is_pack: null,
+      item_id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+      location: {
+        id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+        name: 'Shelf A1-1',
+        notes: 'Bin size: L',
+        parent_id: '10d04631-7fcf-460f-951a-a6f6a9508002',
+        barcode_qr: 'LOC-SHELF-A1-1',
+        created_at: '2025-10-01T02:31:59.007102+00:00',
+        description: 'Shelf row 1 (fast picks)',
+        order_weight: 1.11,
+      },
+      pack_size: null,
+      barcode_qr: 'INV-001',
+      created_at: '2025-10-01T02:33:28.847389+00:00',
+      location_id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+    },
+    {
+      id: '3b0eca71-6e30-4938-8c37-a38ade5d4ce3',
+      is_pack: null,
+      item_id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+      location: {
+        id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+        name: 'Shelf A1-1',
+        notes: 'Bin size: L',
+        parent_id: '10d04631-7fcf-460f-951a-a6f6a9508002',
+        barcode_qr: 'LOC-SHELF-A1-1',
+        created_at: '2025-10-01T02:31:59.007102+00:00',
+        description: 'Shelf row 1 (fast picks)',
+        order_weight: 1.11,
+      },
+      pack_size: null,
+      barcode_qr: 'INV-002',
+      created_at: '2025-10-01T02:33:28.847389+00:00',
+      location_id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+    },
+    {
+      id: '2a961a8d-c0ff-4549-96eb-f840dea48130',
+      is_pack: null,
+      item_id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+      location: {
+        id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+        name: 'Shelf A1-1',
+        notes: 'Bin size: L',
+        parent_id: '10d04631-7fcf-460f-951a-a6f6a9508002',
+        barcode_qr: 'LOC-SHELF-A1-1',
+        created_at: '2025-10-01T02:31:59.007102+00:00',
+        description: 'Shelf row 1 (fast picks)',
+        order_weight: 1.11,
+      },
+      pack_size: null,
+      barcode_qr: 'INV-003',
+      created_at: '2025-10-01T02:33:28.847389+00:00',
+      location_id: 'ba7ba039-28a4-459f-9d37-b2eb18842f7d',
+    },
+    {
+      id: '33ce99e8-3a11-4bc9-ad3c-20cac4af91b8',
+      is_pack: null,
+      item_id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+      location: {
+        id: 'a3396c50-c977-41d5-90e3-368c69cec89d',
+        name: 'Shelf A1-2',
+        notes: 'Bin size: M',
+        parent_id: '10d04631-7fcf-460f-951a-a6f6a9508002',
+        barcode_qr: 'LOC-SHELF-A1-2',
+        created_at: '2025-10-01T02:31:59.007102+00:00',
+        description: 'Shelf row 2 (fast picks)',
+        order_weight: 1.12,
+      },
+      pack_size: null,
+      barcode_qr: 'INV-004',
+      created_at: '2025-10-01T02:33:28.847389+00:00',
+      location_id: 'a3396c50-c977-41d5-90e3-368c69cec89d',
+    },
+    {
+      id: 'e4f43d42-727d-4df0-bfc3-fa177d9730c1',
+      is_pack: null,
+      item_id: '6be28413-fe3a-47e2-9b15-a54d51fb28de',
+      location: {
+        id: 'a3396c50-c977-41d5-90e3-368c69cec89d',
+        name: 'Shelf A1-2',
+        notes: 'Bin size: M',
+        parent_id: '10d04631-7fcf-460f-951a-a6f6a9508002',
+        barcode_qr: 'LOC-SHELF-A1-2',
+        created_at: '2025-10-01T02:31:59.007102+00:00',
+        description: 'Shelf row 2 (fast picks)',
+        order_weight: 1.12,
+      },
+      pack_size: null,
+      barcode_qr: 'INV-005',
+      created_at: '2025-10-01T02:33:28.847389+00:00',
+      location_id: 'a3396c50-c977-41d5-90e3-368c69cec89d',
+    },
+  ],
+  inventory_location: null,
+  inventory_location_id: null,
+  reorder_point: 0,
+  is_reorder: true,
+  keywords: null,
+  keywords_eng_to_ch: null,
+  keywords_ch: null,
+  keywords_ch_to_eng: null,
+  item_image: 'http://localhost:5012/images/206101783.jpg',
+  kanban_image: '1753382008679.png',
+  label_pdf_url: null,
+  link: null,
+  created_at: '2025-10-01T02:09:56.419981+00:00',
+  latest_manual_log_date: '2025-06-18T14:30:49.909096+00:00',
+  supplier: {
+    id: 'e2e4046c-d953-4273-883d-0c965e79e971',
+    name: 'Home Depot',
+    barcode_qr: 'HD-001-QR',
+    created_at: '2025-10-01T02:31:58.846492+00:00',
+  },
+}
 
 export const Route = createFileRoute('/inventory/')({
   component: RouteComponent,
@@ -17,47 +159,19 @@ export const Route = createFileRoute('/inventory/')({
 
 function RouteComponent() {
   const { t } = useTranslation()
-  const [activeModal, setActiveModal] = useState<{
-    name: string
-    data?: any
-  } | null>(null)
+  const [activeModal, setActiveModal] = useState(null)
 
   const {
-    data = [],
+    data: itemsInventory = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['items'],
-    queryFn: fetchItems,
+    queryKey: ['items/inventory'],
+    queryFn: fetchItemsInventory,
   })
 
   const closeModal = () => setActiveModal(null)
 
-  const editItem = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const btn = form.querySelector('button[type="submit"]')
-    btn.disabled = true
-
-    try {
-      const newData = {
-        id: form.elements['id']?.value,
-        image: form.elements['image']?.value,
-        vendor: form.elements['vendor']?.value,
-        name: form.elements['name']?.value,
-        sku: form.elements['sku']?.value,
-        internal_sku: form.elements['internal_sku']?.value,
-        price: form.elements['price']?.value,
-        stock: form.elements['stock']?.value,
-      }
-
-      // await patchItem(newData)
-    } finally {
-      closeModal()
-      toast.success('Update success')
-      btn.disabled = false
-    }
-  }
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
   return (
@@ -65,21 +179,18 @@ function RouteComponent() {
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
           <div className="w-dvw max-w-md">
-            {activeModal.name == 'editItem' && (
+            {/* {activeModal.name == 'editItem' && (
               <EditItemModal
                 data={activeModal.data}
                 cancelCallback={closeModal}
                 saveCallback={editItem}
               />
-            )}
+            )} */}
           </div>
         </div>
       )}
 
       <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
-        <div className="text-center font-bold rounded bg-red-50 text-red-900 border text-lg py-2 my-2">
-          UI MOCKUP ONLY
-        </div>
         <div className="flex justify-between">
           <div className="divide-x ">
             <Link to="/" className="action-link !ps-0">
@@ -109,138 +220,12 @@ function RouteComponent() {
 
         <InventorySearchWithFilters />
 
-        <div className="grid grid-cols-2 gap-3 ">
-          {data?.map((item) => (
-            <GridInventoryCard
-              key={item.id}
-              data={item}
-              actions={({ data }) => (
-                <div className="flex justify-end">
-                  <button
-                    className="action-link text-end text-sm"
-                    onClick={() =>
-                      setActiveModal({ name: 'editItem', data: data })
-                    }
-                  >
-                    {t('Update')}
-                  </button>
-                </div>
-              )}
-            />
+        <div className="space-y-2">
+          {itemsInventory?.map((item) => (
+            <RowInventoryCard key={item.id} data={item} />
           ))}
         </div>
       </div>
     </>
-  )
-}
-
-const EditItemModal = ({ data, saveCallback, cancelCallback }) => {
-  // USED IN INVENTORY AND ITEMS/PRODUCTS INDEX
-  const { t } = useTranslation()
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: fetchSuppliers,
-  })
-  return (
-    <div className="bg-white rounded p-3 mx-3">
-      <form onSubmit={saveCallback} method="post">
-        <div className="mb-3 flex justify-between items-center">
-          <h3 className="font-semibold text-xl">Edit item details</h3>
-          <button
-            className="action-link not-disabled:!text-red-500 !px-0"
-            disabled
-          >
-            Delete
-          </button>
-        </div>
-
-        {/* MODAL'S CONTENT */}
-        <div className="flex flex-col space-y-1 max-h-[75lvh] overflow-auto p-2 border-y border-gray-400">
-          <input type="hidden" name="id" value={data?.id} />
-
-          <label className="mb-0 text-xs italic">Display image</label>
-          <input
-            type="file"
-            name="product_img"
-            accept="image/*"
-            className="form-control"
-          />
-
-          <label className="mb-0 text-xs italic">Item name</label>
-          <textarea
-            name="name"
-            placeholder="Quantum Wrench 1200/12ft"
-            defaultValue={data?.short_name}
-            className="form-control"
-          />
-
-          <label className="mb-0 text-xs italic">Supplier</label>
-          <select
-            name="supplier"
-            defaultValue={data.supplier || 'Home Depot'}
-            className="form-control"
-          >
-            {suppliers.map((sup) => (
-              <option key={sup.id} value={sup.id}>
-                {sup.name}
-              </option>
-            ))}
-          </select>
-
-          <label className="mb-0 text-xs italic">Supplier's SKU</label>
-          <input
-            name="external_sku"
-            type="text"
-            placeholder="SKU-9M1LT8"
-            defaultValue={data?.sku_number}
-            className="w-full border rounded p-2"
-          />
-
-          <label className="mb-0 text-xs italic">Internal SKU</label>
-          <input
-            name="internal_sku"
-            type="text"
-            placeholder="DTH000000001"
-            defaultValue={data?.internet_sku_number}
-            className="w-full border rounded p-2"
-          />
-
-          <label className="mb-0 text-xs italic">Price</label>
-          <input
-            name="price"
-            type="number"
-            step="0.01"
-            placeholder="$100.00"
-            defaultValue={data?.item_price}
-            className="w-full border rounded p-2"
-          />
-
-          <label className="mb-0 text-xs italic">Onhand</label>
-          <input
-            name="stocks"
-            type="number"
-            placeholder="100"
-            defaultValue={data?.inventory}
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        <div className="flex gap-2 mt-4">
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            onClick={cancelCallback}
-            type="button"
-          >
-            {t('Close')}
-          </button>
-          <button
-            className="border flex-1 py-2 px-4 rounded mt-2 cursor-pointer"
-            type="submit"
-          >
-            {t('Save')}
-          </button>
-        </div>
-      </form>
-    </div>
   )
 }

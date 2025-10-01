@@ -54,6 +54,15 @@ export const removeItemMutation = async (data) => {
 }
 // #endregion
 
+// #region ═══════════ ITEMS INVENTORY ═══════════ //
+export const fetchItemsInventory = async () => {
+  const { data } = await axios.get(BASE_API + '/items/inventory', {
+    params: { orderBy: 'created_at', orderDir: 'desc' },
+  })
+  return data
+}
+// #endregion
+
 // #region ═══════════ REQUESTS ═══════════ //
 export const fetchRequests = async ({ ...params }) => {
   const { data } = await axios.get(BASE_API + '/requested-items', {

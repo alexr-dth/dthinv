@@ -335,10 +335,10 @@ const ExpandableRow = ({
   return (
     <div className="ms-2">
       <h5
-        className={`${depthColors[depth % 10]} ${childList.length && 'cursor-pointer'} border-s-5 pe-1 py-1 not-only:font-semibold flex gap-2 items-center`}
+        className={`${depthColors[depth % 10]} cursor-grab border-s-5 pe-1 py-1 not-only:font-semibold flex gap-2 items-center`}
         onClick={toggleExpand}
       >
-        <LucideGripVertical size={16} className="cursor-grab" />
+        <LucideGripVertical size={16}  />
         <strong className="truncate">{data.name}</strong>
 
         <span className="text-black/40 text-xs truncate">
