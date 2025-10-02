@@ -338,7 +338,7 @@ const ExpandableRow = ({
         className={`${depthColors[depth % 10]} cursor-grab border-s-5 pe-1 py-1 not-only:font-semibold flex gap-2 items-center`}
         onClick={toggleExpand}
       >
-        <LucideGripVertical size={16}  />
+        <LucideGripVertical size={16} />
         <strong className="truncate">{data.name}</strong>
 
         <span className="text-black/40 text-xs truncate">
@@ -390,7 +390,7 @@ const ExpandableRow = ({
                     e.stopPropagation()
                     setMenuExpanded(false)
                   }}
-                  to="/locations/$locationId/items"
+                  to="/locations/$locationId/inventory"
                   params={{ locationId: data.id }}
                 >
                   View Items
@@ -580,7 +580,7 @@ const EditLocationModal = ({ data, closeModal }) => {
           notes: form.elements['notes']?.value,
         }),
         {
-          loading: 'Loading',
+          loading: 'Loading...',
           success: 'Location updated',
           error: 'Process failed',
         },

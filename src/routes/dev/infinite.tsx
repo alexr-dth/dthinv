@@ -26,7 +26,10 @@ function RouteComponent() {
     isLoading,
     error,
     dataUpdatedAt,
-  } = usePaginatedQuery({ queryKey: ['items'], queryFn: fetchPaginatedItems })
+  } = usePaginatedQuery({
+    queryKey: ['items', 'paginated'],
+    queryFn: fetchPaginatedItems,
+  })
 
   const itemsData = data?.items ?? []
   const totalCount = data?.totalCount ?? 0
@@ -40,7 +43,10 @@ function RouteComponent() {
 
   return (
     <div>
-      <ItemSearchBarWithFilters originalData={itemsData} setFilteredData={setFilteredData} />
+      <ItemSearchBarWithFilters
+        originalData={itemsData}
+        setFilteredData={setFilteredData}
+      />
       <div>
         {filteredData.map((item) => (
           <div key={item.id} className="">

@@ -1,9 +1,9 @@
 // ITEMS
 import { useTranslation } from 'react-i18next'
 
-export default function GridItemCard({ data = {}, actions = {} }) {
+export default function GridProductCard({ data = {}, actions = {} }) {
   const { t } = useTranslation()
-  const primary = actions['primary']
+  const {primary, secondary} = actions
 
   return (
     <div className="rounded border p-2 h-full flex flex-col">
@@ -29,16 +29,7 @@ export default function GridItemCard({ data = {}, actions = {} }) {
         {data?.internet_sku_number || 'n/a'}
       </div>
 
-      <div className="text-nowrap font-medium text-sm">
-        <span className="font-semibold">{t('Onhand')}:</span>{' '}
-        <span className="">{data.inventory || 0}</span>
-      </div>
-      <div className="text-nowrap font-medium text-sm">
-        <span className="font-semibold">{t('Reorder Qty')}:</span>{' '}
-        <span className="">{data.default_order_qty || 0}</span>
-      </div>
-
-      <div className="text-2xl font-bold text-gray-800">
+      <div className="flex-1 font-semibold underline">
         ${parseFloat(data.item_price || 0).toFixed(2)}
       </div>
 
@@ -46,12 +37,23 @@ export default function GridItemCard({ data = {}, actions = {} }) {
 
       <div>
         <div className="flex justify-end">
-          <button
-            className="action-link text-end text-sm"
-            onClick={() => primary?.cb(data.id)}
-          >
-            {primary?.label}
-          </button>
+          {primary && (
+            <button
+              className="action-link text-end text-sm"
+              onClick={() => primary?.cb(data.id)}
+            >
+              {primary?.label}
+            </button>
+          )}
+
+          {secondary && (
+            <button
+              className="action-link text-end text-sm"
+              onClick={() => secondary?.cb(data.id)}
+            >
+              {secondary?.label}
+            </button>
+          )}
         </div>
       </div>
     </div>

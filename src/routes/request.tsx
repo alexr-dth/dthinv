@@ -10,7 +10,7 @@ import {
   fetchPaginatedItems,
   showItem,
 } from '@/api/api'
-import GridItemCard from '@/components/Cards/GridItemCard'
+import GridProductCard from '@/components/Cards/Products/GridProductCard'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
 import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 
@@ -205,7 +205,7 @@ const ManualSearchModal = ({ confirmCallback, closeModal }) => {
               <div className="space-y-8 max-h-[60lvh] overflow-auto py-4 border-y border-gray-400 px-2">
                 <div className="grid grid-cols-2 gap-2">
                   {filteredData?.map((item, index) => (
-                    <GridItemCard
+                    <GridProductCard
                       key={item.id || index}
                       data={item}
                       actions={{

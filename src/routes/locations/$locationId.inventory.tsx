@@ -1,34 +1,35 @@
-import { fetchItems, fetchLocationById } from '@/api/api'
+import { fetchItems, showLocation } from '@/api/api'
+import GridProductCard from '@/components/Cards/Products/GridProductCard'
+import RowTotalInventoryCard from '@/components/Cards/RowTotalInventoryCard'
+import RowProductCard from '@/components/Cards/Products/RowProductCard'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
 import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
+import RowInventoryCard from '@/components/Cards/RowInventoryCard'
 
-export const Route = createFileRoute('/locations/$locationId/items')({
+export const Route = createFileRoute('/locations/$locationId/inventory')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { locationId } = useParams({ from: '/locations/$locationId/items' })
+  const { locationId } = useParams({ from: '/locations/$locationId/inventory' })
 
   const [rowView, setRowView] = useState(false)
-  const [activeModal, setActiveModal] = useState<{
-    name: string
-    data?: any
-  } | null>(null)
+  const [activeModal, setActiveModal] = useState(null)
 
-  // React Query - for fetching data via api
   const {
-    data: items = [],
+    data: locationData = [],
     isLoading,
     error,
   } = useQuery({
     queryKey: ['locations', String(locationId)],
-    queryFn: () => fetchLocationById(locationId),
-    select: (data) => data.items || [],
+    queryFn: () => showLocation(locationId),
   })
+
+  const inventory = locationData.inventory || []
 
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
@@ -56,39 +57,27 @@ function RouteComponent() {
             Save
           </button> */}
         </div>
-        <h2 className="page-title">
-          Location Inventory
-        </h2>
+        <div className="">Location Inventory</div>
+        <h2 className="page-title">{locationData.name}</h2>
 
-        <ItemSearchBarWithFilters />
-
-        <div
-          id="title-buttons"
-          className="divide-x mt-6 mb-2 text-nowrap overflow-auto pb-2"
-        >
+        <div id="title-buttons">
           <button className="action-link" onClick={() => setRowView(!rowView)}>
             Toggle view
           </button>
         </div>
 
+        <ItemSearchBarWithFilters />
+
         {rowView ? (
           <div className="grid grid-cols-2 gap-3">
-            {items?.map((item) => (
-              <ItemCard
-                key={item.id}
-                data={item}
-                setActiveModal={setActiveModal}
-              />
+            {inventory?.map((inv) => (
+              <GridProductCard key={inv.id} data={inv.item} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {items?.map((item) => (
-              <ItemRowCard
-                key={item.id}
-                data={item}
-                setActiveModal={setActiveModal}
-              />
+            {inventory?.map((inv) => (
+              <RowInventoryCard key={inv.id} data={inv} />
             ))}
           </div>
         )}

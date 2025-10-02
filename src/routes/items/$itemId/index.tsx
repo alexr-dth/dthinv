@@ -1,12 +1,15 @@
 import {
   editItemMutation,
   fetchItems,
+  fetchLocations,
   fetchLocationsFormatted,
   fetchSuppliers,
   showItem,
+  showItemInventory,
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
+import createInventoryPerLocation from '@/helpers/createInventoryPerLocation'
 import {
   useInfiniteQuery,
   useMutation,
@@ -15,21 +18,25 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
-export const Route = createFileRoute('/items/$itemId')({
+export const Route = createFileRoute('/items/$itemId/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const itemImageDisplay = useRef(null)
-  const { itemId } = useParams({ from: '/items/$itemId' })
+  const { itemId } = useParams({ from: '/items/$itemId/' })
   const { t } = useTranslation()
 
   const [
-    { data: itemData = {}, isLoading: isItemLoading, error: itemError },
+    {
+      data: itemWithInventoryData = {},
+      isLoading: isItemLoading,
+      error: itemError,
+    },
     {
       data: suppliersData = [],
       isLoading: isSuppliersLoading,
@@ -43,20 +50,24 @@ function RouteComponent() {
   ] = useQueries({
     queries: [
       {
-        queryKey: ['items', itemId],
-        queryFn: () => showItem(itemId),
-        enabled: !!itemId,
+        queryKey: ['items/inventory', itemId],
+        queryFn: () => showItemInventory(itemId, { outer: true }),
       },
       {
         queryKey: ['suppliers'],
         queryFn: fetchSuppliers,
       },
       {
-        queryKey: ['locations', 'formatted'],
-        queryFn: fetchLocationsFormatted,
+        queryKey: ['locations'],
+        queryFn: fetchLocations,
       },
     ],
   })
+
+  const inventoryPerLocation = useMemo(
+    () => createInventoryPerLocation(itemWithInventoryData?.inventory),
+    [itemWithInventoryData],
+  )
 
   const anyLoading = isItemLoading || isSuppliersLoading || isLocationsLoading
   const firstError = itemError || suppliersError || locationsError
@@ -93,14 +104,14 @@ function RouteComponent() {
       <div>
         <img
           ref={itemImageDisplay}
-          src={itemData.item_image}
+          src={itemWithInventoryData?.item_image}
           className="border w-3/4 mx-auto rounded object-contain aspect-square"
         />
         <h2 className="text-center mt-2">
-          {itemData.short_name ||
-            itemData.item_desc ||
-            itemData.sku ||
-            itemData.id}
+          {itemWithInventoryData?.short_name ||
+            itemWithInventoryData?.item_desc ||
+            itemWithInventoryData?.sku ||
+            itemWithInventoryData?.id}
         </h2>
       </div>
 
@@ -115,7 +126,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Item Description</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.item_desc || (
+                  {itemWithInventoryData?.item_desc || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -125,7 +136,7 @@ function RouteComponent() {
                   Item Description Mandarin
                 </div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.item_desc_mandarin || (
+                  {itemWithInventoryData?.item_desc_mandarin || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -133,7 +144,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Template</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.template || (
+                  {itemWithInventoryData?.template || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -152,7 +163,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">SKU</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.sku_number || (
+                  {itemWithInventoryData?.sku_number || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -160,7 +171,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Internet SKU</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.internet_sku_number || (
+                  {itemWithInventoryData?.internet_sku_number || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -168,7 +179,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Internal SKU</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.internal_sku || (
+                  {itemWithInventoryData?.internal_sku || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -176,7 +187,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">DTH SKU</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.dth_sku || (
+                  {itemWithInventoryData?.dth_sku || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -184,7 +195,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Temp Internal SKU</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.temp_internal_sku || (
+                  {itemWithInventoryData?.temp_internal_sku || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -192,7 +203,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Material ID</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.material_id || (
+                  {itemWithInventoryData?.material_id || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -205,7 +216,7 @@ function RouteComponent() {
                   </span>
                 </div>
                 <div className="ms-2 empty:py-2">
-                  {(itemData.upc || []).join(', ') || (
+                  {(itemWithInventoryData?.upc || []).join(', ') || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -223,7 +234,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Supplier</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.supplier_id || (
+                  {itemWithInventoryData?.supplier?.name || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -233,7 +244,7 @@ function RouteComponent() {
                 <div>
                   <div className="font-bold text-xs">Item Price</div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.item_price || (
+                    {itemWithInventoryData?.item_price || (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
@@ -241,7 +252,7 @@ function RouteComponent() {
                 <div>
                   <div className="font-bold text-xs">Default Order Qty</div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.default_order_qty || (
+                    {itemWithInventoryData?.default_order_qty || (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
@@ -249,7 +260,7 @@ function RouteComponent() {
                 <div>
                   <div className="font-bold text-xs">Pack Size</div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.pack_size || (
+                    {itemWithInventoryData?.pack_size || (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
@@ -268,7 +279,7 @@ function RouteComponent() {
               <div>
                 <div className="font-bold text-xs">Label Size</div>
                 <div className="ms-2 empty:py-2">
-                  {itemData.label_size || (
+                  {itemWithInventoryData?.label_size || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
@@ -279,15 +290,16 @@ function RouteComponent() {
                     Default Inventory Location
                   </div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.inventory_location_id || (
+                    {itemWithInventoryData?.default_location?.name || (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
                 </div>
+
                 <div>
-                  <div className="font-bold text-xs">Onhand</div>
+                  <div className="font-bold text-xs">Automatic Reorder</div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.inventory || (
+                    {itemWithInventoryData?.is_reorder?.toString() ?? (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
@@ -296,19 +308,44 @@ function RouteComponent() {
 
               <div className="flex *:flex-1 gap-3">
                 <div>
-                  <div className="font-bold text-xs">Automatic Reorder</div>
+                  <div className="font-bold text-xs">Total Onhand</div>
                   <div className="ms-2 empty:py-2">
-                    {itemData.is_reorder.toString() ?? (
+                    {itemWithInventoryData?.inventory.length || (
                       <span className="text-gray-400">n/a</span>
                     )}
                   </div>
                 </div>
                 <div>
                   <div className="font-bold text-xs">Reorder Point</div>
-                  {itemData.reorder_point || (
+                  {itemWithInventoryData?.reorder_point || (
                     <span className="text-gray-400">n/a</span>
                   )}
                 </div>
+              </div>
+
+              <div>
+                <div className="font-bold text-xs">Inventory Per Location</div>
+                <ul className="ms-2 empty:py-2">
+                  {!inventoryPerLocation?.length && (
+                    <span className="text-gray-400">n/a</span>
+                  )}
+                  {inventoryPerLocation.map((location) => (
+                    <li
+                      key={location.id}
+                      className="flex [&>*]:flex-1 items-center gap-3 before:content-['•']"
+                    >
+                      <span className="text-sm">{location.name}:</span>
+                      <span>
+                        <span className="font-semibold">
+                          {location?.inventory?.length}
+                        </span>{' '}
+                        <span className="italic text-gray-400 text-xs">
+                          unit/s
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </details>

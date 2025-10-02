@@ -86,6 +86,20 @@ function RouteComponent() {
             </ul>
           }
         />
+        <div className="mt-5 text-center mb-5">
+          <div className="text-xs mb-4 font-light text-gray-400">
+            Showing {orders?.length} of {orders.length} items
+          </div>
+          {/* {hasNextPage && (
+          <button
+            className="action-link"
+            disabled={isFetching}
+            onClick={() => fetchNextPage()}
+          >
+            Load More...
+          </button>
+        )} */}
+        </div>
       </div>
     </>
   )
@@ -93,10 +107,6 @@ function RouteComponent() {
 
 const OrderCard = ({ data: order }) => {
   const [optionExpanded, setOptionExpanded] = useState(false)
-
-
-
-
 
   console.log(order)
 

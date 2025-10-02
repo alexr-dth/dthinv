@@ -1,6 +1,6 @@
 export default function EmptyList({ iterable=[], nonEmpty: NonEmpty }) {
   return iterable?.length < 1 ? (
-    <div className="empty-list mt-5">Empty</div>
+    <div className="empty-list">Empty</div>
   ) : (
     NonEmpty
   )

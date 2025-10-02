@@ -23,15 +23,15 @@ import { Route as SuppliersAddRouteImport } from './routes/suppliers.add'
 import { Route as OrdersNew2RouteImport } from './routes/orders/new2'
 import { Route as OrdersNewRouteImport } from './routes/orders/new'
 import { Route as LocationsIndex2RouteImport } from './routes/locations/index2'
-import { Route as ItemsItemIdRouteImport } from './routes/items/$itemId'
 import { Route as DevPdfRouteImport } from './routes/dev/pdf'
 import { Route as DevPage2RouteImport } from './routes/dev/page2'
 import { Route as DevPage1RouteImport } from './routes/dev/page1'
 import { Route as DevInfiniteRouteImport } from './routes/dev/infinite'
 import { Route as OrdersOrderIdIndexRouteImport } from './routes/orders/$orderId/index'
+import { Route as ItemsItemIdIndexRouteImport } from './routes/items/$itemId/index'
 import { Route as OrdersOrderIdEditRouteImport } from './routes/orders/$orderId/edit'
-import { Route as LocationsLocationIdItemsRouteImport } from './routes/locations/$locationId.items'
-import { Route as ItemsItemIdEditRouteImport } from './routes/items/$itemId.edit'
+import { Route as LocationsLocationIdInventoryRouteImport } from './routes/locations/$locationId.inventory'
+import { Route as ItemsItemIdEditRouteImport } from './routes/items/$itemId/edit'
 
 const RequestRoute = RequestRouteImport.update({
   id: '/request',
@@ -103,11 +103,6 @@ const LocationsIndex2Route = LocationsIndex2RouteImport.update({
   path: '/locations/index2',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ItemsItemIdRoute = ItemsItemIdRouteImport.update({
-  id: '/items/$itemId',
-  path: '/items/$itemId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DevPdfRoute = DevPdfRouteImport.update({
   id: '/dev/pdf',
   path: '/dev/pdf',
@@ -133,21 +128,26 @@ const OrdersOrderIdIndexRoute = OrdersOrderIdIndexRouteImport.update({
   path: '/orders/$orderId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ItemsItemIdIndexRoute = ItemsItemIdIndexRouteImport.update({
+  id: '/items/$itemId/',
+  path: '/items/$itemId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersOrderIdEditRoute = OrdersOrderIdEditRouteImport.update({
   id: '/orders/$orderId/edit',
   path: '/orders/$orderId/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocationsLocationIdItemsRoute =
-  LocationsLocationIdItemsRouteImport.update({
-    id: '/locations/$locationId/items',
-    path: '/locations/$locationId/items',
+const LocationsLocationIdInventoryRoute =
+  LocationsLocationIdInventoryRouteImport.update({
+    id: '/locations/$locationId/inventory',
+    path: '/locations/$locationId/inventory',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ItemsItemIdEditRoute = ItemsItemIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ItemsItemIdRoute,
+  id: '/items/$itemId/edit',
+  path: '/items/$itemId/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -159,7 +159,6 @@ export interface FileRoutesByFullPath {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
-  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -171,8 +170,9 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersIndexRoute
   '/requests': typeof RequestsIndexRoute
   '/items/$itemId/edit': typeof ItemsItemIdEditRoute
-  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/locations/$locationId/inventory': typeof LocationsLocationIdInventoryRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/items/$itemId': typeof ItemsItemIdIndexRoute
   '/orders/$orderId': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -184,7 +184,6 @@ export interface FileRoutesByTo {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
-  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -196,8 +195,9 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersIndexRoute
   '/requests': typeof RequestsIndexRoute
   '/items/$itemId/edit': typeof ItemsItemIdEditRoute
-  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/locations/$locationId/inventory': typeof LocationsLocationIdInventoryRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/items/$itemId': typeof ItemsItemIdIndexRoute
   '/orders/$orderId': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRoutesById {
@@ -210,7 +210,6 @@ export interface FileRoutesById {
   '/dev/page1': typeof DevPage1Route
   '/dev/page2': typeof DevPage2Route
   '/dev/pdf': typeof DevPdfRoute
-  '/items/$itemId': typeof ItemsItemIdRouteWithChildren
   '/locations/index2': typeof LocationsIndex2Route
   '/orders/new': typeof OrdersNewRoute
   '/orders/new2': typeof OrdersNew2Route
@@ -222,8 +221,9 @@ export interface FileRoutesById {
   '/orders/': typeof OrdersIndexRoute
   '/requests/': typeof RequestsIndexRoute
   '/items/$itemId/edit': typeof ItemsItemIdEditRoute
-  '/locations/$locationId/items': typeof LocationsLocationIdItemsRoute
+  '/locations/$locationId/inventory': typeof LocationsLocationIdInventoryRoute
   '/orders/$orderId/edit': typeof OrdersOrderIdEditRoute
+  '/items/$itemId/': typeof ItemsItemIdIndexRoute
   '/orders/$orderId/': typeof OrdersOrderIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -237,7 +237,6 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
-    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -249,8 +248,9 @@ export interface FileRouteTypes {
     | '/orders'
     | '/requests'
     | '/items/$itemId/edit'
-    | '/locations/$locationId/items'
+    | '/locations/$locationId/inventory'
     | '/orders/$orderId/edit'
+    | '/items/$itemId'
     | '/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -262,7 +262,6 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
-    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -274,8 +273,9 @@ export interface FileRouteTypes {
     | '/orders'
     | '/requests'
     | '/items/$itemId/edit'
-    | '/locations/$locationId/items'
+    | '/locations/$locationId/inventory'
     | '/orders/$orderId/edit'
+    | '/items/$itemId'
     | '/orders/$orderId'
   id:
     | '__root__'
@@ -287,7 +287,6 @@ export interface FileRouteTypes {
     | '/dev/page1'
     | '/dev/page2'
     | '/dev/pdf'
-    | '/items/$itemId'
     | '/locations/index2'
     | '/orders/new'
     | '/orders/new2'
@@ -299,8 +298,9 @@ export interface FileRouteTypes {
     | '/orders/'
     | '/requests/'
     | '/items/$itemId/edit'
-    | '/locations/$locationId/items'
+    | '/locations/$locationId/inventory'
     | '/orders/$orderId/edit'
+    | '/items/$itemId/'
     | '/orders/$orderId/'
   fileRoutesById: FileRoutesById
 }
@@ -313,7 +313,6 @@ export interface RootRouteChildren {
   DevPage1Route: typeof DevPage1Route
   DevPage2Route: typeof DevPage2Route
   DevPdfRoute: typeof DevPdfRoute
-  ItemsItemIdRoute: typeof ItemsItemIdRouteWithChildren
   LocationsIndex2Route: typeof LocationsIndex2Route
   OrdersNewRoute: typeof OrdersNewRoute
   OrdersNew2Route: typeof OrdersNew2Route
@@ -324,8 +323,10 @@ export interface RootRouteChildren {
   NotificationsIndexRoute: typeof NotificationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   RequestsIndexRoute: typeof RequestsIndexRoute
-  LocationsLocationIdItemsRoute: typeof LocationsLocationIdItemsRoute
+  ItemsItemIdEditRoute: typeof ItemsItemIdEditRoute
+  LocationsLocationIdInventoryRoute: typeof LocationsLocationIdInventoryRoute
   OrdersOrderIdEditRoute: typeof OrdersOrderIdEditRoute
+  ItemsItemIdIndexRoute: typeof ItemsItemIdIndexRoute
   OrdersOrderIdIndexRoute: typeof OrdersOrderIdIndexRoute
 }
 
@@ -429,13 +430,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationsIndex2RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/items/$itemId': {
-      id: '/items/$itemId'
-      path: '/items/$itemId'
-      fullPath: '/items/$itemId'
-      preLoaderRoute: typeof ItemsItemIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dev/pdf': {
       id: '/dev/pdf'
       path: '/dev/pdf'
@@ -471,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/items/$itemId/': {
+      id: '/items/$itemId/'
+      path: '/items/$itemId'
+      fullPath: '/items/$itemId'
+      preLoaderRoute: typeof ItemsItemIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/$orderId/edit': {
       id: '/orders/$orderId/edit'
       path: '/orders/$orderId/edit'
@@ -478,34 +479,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/locations/$locationId/items': {
-      id: '/locations/$locationId/items'
-      path: '/locations/$locationId/items'
-      fullPath: '/locations/$locationId/items'
-      preLoaderRoute: typeof LocationsLocationIdItemsRouteImport
+    '/locations/$locationId/inventory': {
+      id: '/locations/$locationId/inventory'
+      path: '/locations/$locationId/inventory'
+      fullPath: '/locations/$locationId/inventory'
+      preLoaderRoute: typeof LocationsLocationIdInventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/items/$itemId/edit': {
       id: '/items/$itemId/edit'
-      path: '/edit'
+      path: '/items/$itemId/edit'
       fullPath: '/items/$itemId/edit'
       preLoaderRoute: typeof ItemsItemIdEditRouteImport
-      parentRoute: typeof ItemsItemIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface ItemsItemIdRouteChildren {
-  ItemsItemIdEditRoute: typeof ItemsItemIdEditRoute
-}
-
-const ItemsItemIdRouteChildren: ItemsItemIdRouteChildren = {
-  ItemsItemIdEditRoute: ItemsItemIdEditRoute,
-}
-
-const ItemsItemIdRouteWithChildren = ItemsItemIdRoute._addFileChildren(
-  ItemsItemIdRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -516,7 +505,6 @@ const rootRouteChildren: RootRouteChildren = {
   DevPage1Route: DevPage1Route,
   DevPage2Route: DevPage2Route,
   DevPdfRoute: DevPdfRoute,
-  ItemsItemIdRoute: ItemsItemIdRouteWithChildren,
   LocationsIndex2Route: LocationsIndex2Route,
   OrdersNewRoute: OrdersNewRoute,
   OrdersNew2Route: OrdersNew2Route,
@@ -527,8 +515,10 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsIndexRoute: NotificationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   RequestsIndexRoute: RequestsIndexRoute,
-  LocationsLocationIdItemsRoute: LocationsLocationIdItemsRoute,
+  ItemsItemIdEditRoute: ItemsItemIdEditRoute,
+  LocationsLocationIdInventoryRoute: LocationsLocationIdInventoryRoute,
   OrdersOrderIdEditRoute: OrdersOrderIdEditRoute,
+  ItemsItemIdIndexRoute: ItemsItemIdIndexRoute,
   OrdersOrderIdIndexRoute: OrdersOrderIdIndexRoute,
 }
 export const routeTree = rootRouteImport

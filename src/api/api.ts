@@ -21,9 +21,10 @@ export const fetchItems = async () => {
   return data
 }
 
-export const fetchPaginatedItems = async ({ pageParam = 1 }) => {
+export const fetchPaginatedItems = async ({ pageParam = 1, ...params }) => {
   const res = await axios.get(BASE_API + `/items`, {
     params: {
+      ...params,
       page: pageParam,
       pageSize: PAGE_SIZE,
       orderBy: 'created_at',
@@ -54,10 +55,41 @@ export const removeItemMutation = async (data) => {
 }
 // #endregion
 
+// this is used in the inventory for simplicity; inventory is a resource of items
 // #region ═══════════ ITEMS INVENTORY ═══════════ //
+
+// THIS ONLY RETURNS ITEMS WITH INVENTORY
 export const fetchItemsInventory = async () => {
   const { data } = await axios.get(BASE_API + '/items/inventory', {
     params: { orderBy: 'created_at', orderDir: 'desc' },
+  })
+  return data
+}
+
+export const fetchPaginatedItemsInventory = async ({
+  pageParam = 1,
+  ...params
+}) => {
+  const res = await axios.get(BASE_API + `/items/inventory`, {
+    params: {
+      ...params,
+      page: pageParam,
+      pageSize: PAGE_SIZE,
+      orderBy: 'created_at',
+      orderDir: 'desc',
+    },
+  })
+  return {
+    data: res.data,
+    totalCount: Number(res.headers['x-total-count']),
+    pageSize: res.data.length,
+    pageParam: pageParam,
+  }
+}
+
+export const showItemInventory = async (id, params = {}) => {
+  const { data } = await axios.get(BASE_API + `/items/${id}/inventory`, {
+    params: { orderBy: 'created_at', orderDir: 'desc', ...params },
   })
   return data
 }
@@ -216,7 +248,7 @@ export const fetchLocationsFormatted = async () => {
   return buildTree(data)
 }
 
-export const fetchLocationById = async (id) => {
+export const showLocation = async (id) => {
   const { data } = await axios.get(BASE_API + `/locations/${id}`)
   return data
 }

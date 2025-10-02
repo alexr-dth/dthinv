@@ -67,7 +67,6 @@ function App() {
 
         <Link to="/locations" className="btn w-full">
           {t('Storage Locations')}{' '}
-          <span className="text-xs text-red-500">(*buggy)</span>
         </Link>
 
         <Link to="/" className="btn w-full disabled">
@@ -80,7 +79,7 @@ function App() {
 
         <TitleDivider title={'Collection'} />
         <Link to="/items" className="btn w-full">
-          {t('Items')}/{t('Products')}<span className="text-xs text-green-700">(*okay)</span>
+          {t('Items')}/{t('Products')}
         </Link>
 
         <Link to="/inventory" className="btn w-full">

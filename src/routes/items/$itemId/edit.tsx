@@ -1,12 +1,15 @@
 import {
   editItemMutation,
   fetchItems,
+  fetchLocations,
   fetchLocationsFormatted,
   fetchSuppliers,
   showItem,
+  showItemInventory,
 } from '@/api/api'
 import ErrorScreen from '@/components/ErrorScreen'
 import PageLoader from '@/components/PageLoader'
+import createInventoryPerLocation from '@/helpers/createInventoryPerLocation'
 import {
   useInfiniteQuery,
   useMutation,
@@ -15,7 +18,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
@@ -30,7 +33,11 @@ function RouteComponent() {
   const { itemId } = useParams({ from: '/items/$itemId/edit' })
 
   const [
-    { data: itemData = {}, isLoading: isItemLoading, error: itemError },
+    {
+      data: itemWithInventoryData = {},
+      isLoading: isItemLoading,
+      error: itemError,
+    },
     {
       data: suppliersData = [],
       isLoading: isSuppliersLoading,
@@ -44,17 +51,16 @@ function RouteComponent() {
   ] = useQueries({
     queries: [
       {
-        queryKey: ['items', itemId],
-        queryFn: () => showItem(itemId),
-        enabled: !!itemId,
+        queryKey: ['items/inventory', itemId],
+        queryFn: () => showItemInventory(itemId, { outer: true }),
       },
       {
         queryKey: ['suppliers'],
         queryFn: fetchSuppliers,
       },
       {
-        queryKey: ['locations', 'formatted'],
-        queryFn: fetchLocationsFormatted,
+        queryKey: ['locations'],
+        queryFn: fetchLocations,
       },
     ],
   })
@@ -104,32 +110,38 @@ function RouteComponent() {
     btn.disabled = true
 
     try {
-      await patchItem({
-        id: itemData.id,
-        item_desc: form.elements['item_desc']?.value,
-        item_desc_mandarin: form.elements['item_desc_mandarin']?.value,
-        template: form.elements['template']?.value,
-        sku_number: form.elements['sku_number']?.value,
-        internet_sku_number: form.elements['internet_sku_number']?.value,
-        internal_sku: form.elements['internal_sku']?.value,
-        dth_sku: form.elements['dth_sku']?.value,
-        temp_internal_sku: form.elements['temp_internal_sku']?.value,
-        material_id: form.elements['material_id']?.value,
-        upc: form.elements['upc']?.value?.split(' '),
-        supplier_id: form.elements['supplier_id']?.value,
+      await toast.promise(
+        patchItem({
+          id: itemWithInventoryData.id,
+          short_name: form?.elements['short_name']?.value,
+          item_desc: form.elements['item_desc']?.value,
+          item_desc_mandarin: form.elements['item_desc_mandarin']?.value,
+          template: form.elements['template']?.value,
+          sku_number: form.elements['sku_number']?.value,
+          internet_sku_number: form.elements['internet_sku_number']?.value,
+          internal_sku: form.elements['internal_sku']?.value,
+          dth_sku: form.elements['dth_sku']?.value,
+          temp_internal_sku: form.elements['temp_internal_sku']?.value,
+          material_id: form.elements['material_id']?.value,
+          upc: form.elements['upc']?.value?.split(' '),
+          supplier_id: form.elements['supplier_id']?.value,
 
-        item_price: form.elements['item_price']?.value,
-        default_order_qty: form.elements['default_order_qty']?.value,
-        pack_size: form.elements['pack_size']?.value,
-        label_size: form.elements['label_size']?.value,
-        inventory_location_id: form.elements['inventory_location_id']?.value,
-        is_reorder: form.elements['is_reorder']?.value,
-      })
+          item_price: form.elements['item_price']?.value,
+          default_order_qty: form.elements['default_order_qty']?.value,
+          pack_size: form.elements['pack_size']?.value,
+          label_size: form.elements['label_size']?.value,
+          inventory_location_id: form.elements['inventory_location_id']?.value,
+          is_reorder: form.elements['is_reorder']?.value,
+        }),
+        {
+          loading: 'Loading...',
+          success: 'Item updated',
+          error: 'Process failed',
+        },
+      )
       // closeModal()
-      toast.success('Update success')
     } catch (error) {
       console.log(error)
-      toast.error('Process failed')
     } finally {
       btn.disabled = false
     }
@@ -157,12 +169,12 @@ function RouteComponent() {
         </div>
       </div>
 
-      <h2 className="page-title">Item Details</h2>
+      <h2 className="page-title">Edit Item Details</h2>
 
       <div>
         <img
           ref={itemImageDisplay}
-          src={itemData.item_image}
+          src={itemWithInventoryData.item_image}
           className="border w-3/4 mx-auto rounded object-contain aspect-square"
         />
         <button
@@ -171,11 +183,22 @@ function RouteComponent() {
         >
           Change image
         </button>
+        {itemWithInventoryData.short_name && (
+          <div className="text-center">
+            <textarea
+              name="short_name"
+              className="form-control-bare block mx-auto"
+              defaultValue={itemWithInventoryData.short_name}
+            />
+            <div className="font-bold text-xs">Short Name</div>
+          </div>
+        )}
         <h2 className="text-center mt-2">
-          {itemData.short_name ||
-            itemData.item_desc ||
-            itemData.sku ||
-            itemData.id}
+          {itemWithInventoryData.short_name
+            ? ''
+            : itemWithInventoryData.item_desc ||
+              itemWithInventoryData.sku ||
+              itemWithInventoryData.id}
         </h2>
       </div>
 
@@ -192,7 +215,7 @@ function RouteComponent() {
                 <textarea
                   name="item_desc"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.item_desc}
+                  defaultValue={itemWithInventoryData.item_desc}
                 />
               </div>
               <div>
@@ -202,7 +225,7 @@ function RouteComponent() {
                 <textarea
                   name="item_desc_mandarin"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.item_desc_mandarin}
+                  defaultValue={itemWithInventoryData.item_desc_mandarin}
                 />
               </div>
               <div>
@@ -210,7 +233,7 @@ function RouteComponent() {
                 <textarea
                   name="template"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.template}
+                  defaultValue={itemWithInventoryData.template}
                 />
               </div>
             </div>
@@ -229,7 +252,7 @@ function RouteComponent() {
                 <textarea
                   name="sku_number"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.sku_number}
+                  defaultValue={itemWithInventoryData.sku_number}
                 />
               </div>
               <div>
@@ -237,7 +260,7 @@ function RouteComponent() {
                 <textarea
                   name="internet_sku_number"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.internet_sku_number}
+                  defaultValue={itemWithInventoryData.internet_sku_number}
                 />
               </div>
               <div>
@@ -245,7 +268,7 @@ function RouteComponent() {
                 <textarea
                   name="internal_sku"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.internal_sku}
+                  defaultValue={itemWithInventoryData.internal_sku}
                 />
               </div>
               <div>
@@ -253,7 +276,7 @@ function RouteComponent() {
                 <textarea
                   name="dth_sku"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.dth_sku}
+                  defaultValue={itemWithInventoryData.dth_sku}
                 />
               </div>
               <div>
@@ -261,7 +284,7 @@ function RouteComponent() {
                 <textarea
                   name="temp_internal_sku"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.temp_internal_sku}
+                  defaultValue={itemWithInventoryData.temp_internal_sku}
                 />
               </div>
               <div>
@@ -269,7 +292,7 @@ function RouteComponent() {
                 <textarea
                   name="material_id"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.material_id}
+                  defaultValue={itemWithInventoryData.material_id}
                 />
               </div>
               <div>
@@ -282,7 +305,7 @@ function RouteComponent() {
                 <textarea
                   name="upc"
                   className="form-control-bare w-full"
-                  defaultValue={(itemData.upc || []).join(', ')}
+                  defaultValue={(itemWithInventoryData.upc || []).join(', ')}
                 />
               </div>
             </div>
@@ -300,7 +323,7 @@ function RouteComponent() {
                 <select
                   name="supplier_id"
                   className="form-control-bare min-w-1/2"
-                  defaultValue={itemData.supplier_id}
+                  defaultValue={itemWithInventoryData.supplier_id}
                   aria-readonly
                 >
                   {suppliersData.map((supplier) => (
@@ -319,7 +342,7 @@ function RouteComponent() {
                     type="number"
                     step="0.01"
                     className="form-control-bare w-full"
-                    defaultValue={itemData.item_price}
+                    defaultValue={itemWithInventoryData.item_price}
                   />
                 </div>
                 <div>
@@ -328,7 +351,7 @@ function RouteComponent() {
                     name="default_order_qty"
                     type="number"
                     className="form-control-bare w-full"
-                    defaultValue={itemData.default_order_qty}
+                    defaultValue={itemWithInventoryData.default_order_qty}
                   />
                 </div>
                 <div>
@@ -337,7 +360,7 @@ function RouteComponent() {
                     name="pack_size"
                     type="number"
                     className="form-control-bare w-full"
-                    defaultValue={itemData.pack_size}
+                    defaultValue={itemWithInventoryData.pack_size}
                   />
                 </div>
               </div>
@@ -357,7 +380,7 @@ function RouteComponent() {
                   name="label_size"
                   type="text"
                   className="form-control-bare w-full"
-                  defaultValue={itemData.label_size}
+                  defaultValue={itemWithInventoryData.label_size}
                 />
               </div>
               <div className="flex *:flex-1 gap-3">
@@ -368,39 +391,40 @@ function RouteComponent() {
                   <select
                     name="inventory_location_id"
                     className="form-control-bare w-full"
-                    defaultValue={itemData.inventory_location_id}
+                    defaultValue={itemWithInventoryData.default_location_id}
                   >
                     {locationsData.map((location) => (
                       <option value={location.id}>{location.name}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <div className="font-bold text-xs">Onhand</div>
-                  <input
-                    type="text"
-                    className="form-control-bare w-full"
-                    defaultValue={itemData.inventory}
-                    readOnly
-                  />
-                </div>
-              </div>
 
-              <div className="flex *:flex-1 gap-3">
                 <div>
                   <div className="font-bold text-xs">Automatic Reorder</div>
                   <select
                     name="is_reorder"
                     className="form-control-bare w-full"
-                    defaultValue={itemData.is_reorder.toString()}
+                    defaultValue={itemWithInventoryData.is_reorder.toString()}
                   >
                     <option key={1} value="true">
-                      Yes
+                      true
                     </option>
                     <option key={2} value="false">
-                      No
+                      false
                     </option>
                   </select>
+                </div>
+              </div>
+
+              <div className="flex *:flex-1 gap-3">
+                <div>
+                  <div className="font-bold text-xs">Total Onhand</div>
+                  <input
+                    type="text"
+                    className="form-control-bare w-full"
+                    defaultValue={itemWithInventoryData.inventory.length}
+                    readOnly
+                  />
                 </div>
                 <div>
                   <div className="font-bold text-xs">Reorder Point</div>
@@ -408,7 +432,7 @@ function RouteComponent() {
                     type="text"
                     className="form-control-bare w-full"
                     readOnly
-                    defaultValue={itemData.reorder_point}
+                    defaultValue={itemWithInventoryData.reorder_point}
                   />
                 </div>
               </div>

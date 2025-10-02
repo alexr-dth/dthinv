@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-export default function RowItemCard({ data = {}, actions = {} }) {
+export default function RowProductCard({ data = {}, actions = {} }) {
   const [expanded, setExpanded] = useState(false)
-  const primary = actions['primary']
+  const {primary, secondary} = actions
 
   return (
     <div className="rounded border p-2">
@@ -30,23 +30,29 @@ export default function RowItemCard({ data = {}, actions = {} }) {
               <div className="text-xs text-gray-400 truncate">
                 {data?.internet_sku_number || 'n/a'}
               </div>
-
-              <div className="text-nowrap font-semibold text-sm">
-                <span>Onhand:</span> {data.inventory || 0}
-              </div>
-              <div className="text-nowrap font-semibold text-sm">
-                <span>Reorder Qty:</span> {data.default_order_qty || 0}
-              </div>
             </div>
 
-            <div className="flex-1 text-end">
+            <div className="flex-1 text-end font-semibold underline">
               <div>${parseFloat(data.item_price || 0).toFixed(2)}</div>
-              <button
-                className="action-link text-xs"
-                onClick={() => primary?.cb(data.id)}
-              >
-                {primary?.label}
-              </button>
+              <div className="flex justify-end">
+                {primary && (
+                  <button
+                    className="action-link text-end text-sm"
+                    onClick={() => primary?.cb(data.id)}
+                  >
+                    {primary?.label}
+                  </button>
+                )}
+
+                {secondary && (
+                  <button
+                    className="action-link text-end text-sm"
+                    onClick={() => secondary?.cb(data.id)}
+                  >
+                    {secondary?.label}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

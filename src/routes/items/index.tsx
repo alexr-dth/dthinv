@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
@@ -16,10 +21,11 @@ import {
 import InlineLoader from '@/components/InlineLoader'
 import ItemSearchBarWithFilters from '@/components/Search/ItemSearchBarWithFilters'
 import PageLoader from '@/components/PageLoader'
-import GridItemCard from '@/components/Cards/GridItemCard'
+import GridProductCard from '@/components/Cards/Products/GridProductCard'
 import ErrorScreen from '@/components/ErrorScreen'
 import usePaginatedQuery from '@/hooks/usePaginatedQuery'
-import RowItemCard from '@/components/Cards/RowItemCard'
+import RowProductCard from '@/components/Cards/Products/RowProductCard'
+import NavigationLinks from '@/components/NavigationLinks'
 
 // MAIN APP
 export const Route = createFileRoute('/items/')({
@@ -30,18 +36,17 @@ function RouteComponent() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const [activeModal, setActiveModal] = useState<{
-    name: string
-    data?: any
-  } | null>(null)
+  const [filterSupplier, setFilterSupplier] = useState(null)
+  const [activeModal, setActiveModal] = useState(null)
+  const closeModal = () => setActiveModal(null)
+
   const [gridView, setGridView] = useState(true)
   const [filteredData, setFilteredData] = useState([])
 
-  useQuery({
+  const { data: suppliersData = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: fetchSuppliers,
   })
-
   const {
     data = {},
     fetchNextPage,
@@ -66,12 +71,20 @@ function RouteComponent() {
     document.body.style.overflow = activeModal?.name ? 'hidden' : 'auto'
   }, [activeModal])
 
-  const closeModal = () => setActiveModal(null)
+  useEffect(() => {
+    if (filterSupplier == null) return
+    setFilteredData(() =>
+      itemsData.filter((supp) => {
+        return supp.supplier.id == filterSupplier.id
+      }),
+    )
+  }, [filterSupplier])
+
   if (isLoading) return <PageLoader />
   if (error) return <ErrorScreen error={error} />
   return (
     <>
-      {/* START MODAL */}
+      {/* Modals */}
       {activeModal != null && (
         <div className="fixed w-full h-full bg-black/60 top-0 left-0 place-content-center grid z-100">
           <div className="w-dvw max-w-md">
@@ -86,29 +99,15 @@ function RouteComponent() {
         </div>
       )}
 
-      {/* END MODAL */}
-      <div className="sm:w-sm sm:mx-auto my-0 sm:my-5 border rounded p-3">
+      {/* Content */}
+      <div className="page-container">
         <div className="flex justify-between">
-          <div className="divide-x ">
-            <Link to="/" className="action-link !ps-0">
-              {t('Home')}
-            </Link>
-            <button
-              onClick={() => window.history.back()}
-              className="action-link px-1"
-            >
-              {t('Back')}
-            </button>
-          </div>
+          <NavigationLinks />
         </div>
 
         <h2 className="page-title">{t('Item Catalogue')}</h2>
 
-        {/* BELOW-TITLE OPTIONS */}
-        <div
-          id="title-buttons"
-          className="divide-x text-nowrap overflow-auto pb-1"
-        >
+        <div id="title-buttons">
           <button
             className="action-link"
             onClick={() => setActiveModal({ name: 'addItem' })}
@@ -123,9 +122,41 @@ function RouteComponent() {
         <ItemSearchBarWithFilters
           originalData={itemsData}
           setFilteredData={setFilteredData}
+          primaryFilter={
+            <div>
+              <div className="text-xs font-semibold mb-1">
+                Filter by supplier:{' '}
+              </div>
+              <div className="rounded-filter-buttons">
+                <button
+                  key={'all'}
+                  onClick={() => setFilterSupplier(null)}
+                  aria-selected={filterSupplier == null}
+                >
+                  All
+                </button>
+
+                {suppliersData?.map((supp) => (
+                  <button
+                    key={supp.id}
+                    onClick={() => setFilterSupplier(supp)}
+                    aria-selected={filterSupplier == supp}
+                  >
+                    {supp.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          }
         />
 
-        <section id="item-list-container">
+        <section>
+          {filterSupplier && (
+            <div className="font-semibold text-sm">
+              Showing {filterSupplier.name} Products
+            </div>
+          )}
+
           <button
             className="action-link text-xs underline ms-auto block mb-2"
             onClick={() => setGridView(!gridView)}
@@ -139,7 +170,9 @@ function RouteComponent() {
           >
             {/* Learn about react-window or react-virtual if displaying multiple items is causing lag. Kinda like culling  */}
             {filteredData?.map((item, index) => {
-              const SelectedViewCard = gridView ? GridItemCard : RowItemCard
+              const SelectedViewCard = gridView
+                ? GridProductCard
+                : RowProductCard
               return (
                 <SelectedViewCard
                   key={item?.id || index}
@@ -148,11 +181,11 @@ function RouteComponent() {
                     primary: {
                       cb: () => {
                         navigate({
-                          to: '/items/$itemId/edit',
+                          to: '/items/$itemId/',
                           params: { itemId: item.id },
                         })
                       },
-                      label: 'Edit',
+                      label: 'View',
                     },
                   }}
                 />

@@ -23,6 +23,7 @@ import { useEffect, useId, useState } from 'react'
 import toast from 'react-hot-toast'
 import totalUnits from '@/utils/totalUnits'
 import totalPrice from '@/utils/totalPrice'
+import EmptyList from '@/components/EmptyList'
 
 const groupDataArr = (data = []) => {
   return data.reduce((acc, row) => {
@@ -63,10 +64,7 @@ function RouteComponent() {
   const { state } = useLocation()
 
   const [pdfOptionExpanded, setPdfOptionExpanded] = useState(false)
-  const [activeModal, setActiveModal] = useState<{
-    name: string
-    data?: any
-  } | null>(null)
+  const [activeModal, setActiveModal] = useState(null)
 
   const [selectedIds, setSelectedIds] = useState(state.selectedIds ?? [])
   const [selectedSupplier, setSelectedSupplier] = useState(state.supplier ?? {})
@@ -573,25 +571,28 @@ const AddRequestedModal = ({
         </h3>
       </div>
       <div className="space-y-8 max-h-[75lvh] overflow-auto py-4 border-y border-gray-400 px-2">
-        {itemsData.map((set, index) => (
-          <div key={index}>
-            <TitleDivider title={set.label} />
-            <div className="space-y-1 divide-y divide-gray-200">
-              {/* instead of supplier set, only requested items with date label */}
-              {(set.suppliers[0]?.requested_items || []).map((reqItem) => {
-                if (reqItem.request_status != 'pending') return null
-                return (
-                  <PendingRequestedCard
-                    key={reqItem.id}
-                    data={reqItem}
-                    selected={tempRequestedItems.includes(reqItem.id)}
-                    setSelectedIds={setTempRequestedItems}
-                  />
-                )
-              })}
+        <EmptyList
+          iterable={itemsData}
+          nonEmpty={itemsData.map((set, index) => (
+            <div key={index}>
+              <TitleDivider title={set.label} />
+              <div className="space-y-1 divide-y divide-gray-200">
+                {/* instead of supplier set, only requested items with date label */}
+                {(set.suppliers[0]?.requested_items || []).map((reqItem) => {
+                  if (reqItem.request_status != 'pending') return null
+                  return (
+                    <PendingRequestedCard
+                      key={reqItem.id}
+                      data={reqItem}
+                      selected={tempRequestedItems.includes(reqItem.id)}
+                      setSelectedIds={setTempRequestedItems}
+                    />
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        />
       </div>
 
       <div className="flex gap-2 mt-4">
